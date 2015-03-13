@@ -33,24 +33,25 @@ var d20pal = (function() {
    * @mixin
    */
   var Taggable = (function() {
-    var initTags = function() {
-      if (this.tags === undefined) {
-        this.tags = [];
-      }
-    };
-
     /**
      * Tags an object with the first argument. Recurses through any arguments
      * that are arrays.
      *
      * @param {...(string|string[])} tagString - String object will be tagged with.
      */
+
+    function initTags(obj) {
+      if (obj.tags === undefined) {
+        obj.tags = [];
+      }
+    }
+
     var tag = function(tagString) {
-      this.initTags();
+      initTags(this);
       var args = Array.prototype.slice.call(arguments);
       args.forEach(function(arg) {
         if (Array.isArray(arg)) {
-          this.tag(arg);
+          this.tag.apply(this, arg);
         } else {
           this.tags.push(arg);
         }
@@ -64,8 +65,15 @@ var d20pal = (function() {
      * @returns {bool} Whether or not the object was tagged with the supplied tag.
      */
     var isTagged = function(tagString) {
-      this.initTags();
-      return this.tags.indexOf(tagString) !== -1;
+      initTags(this);
+      var args = Array.prototype.slice.call(arguments);
+      args.forEach(function(arg){
+        if (!Array.isArray(arg)) { // base case
+          return (this.tags.indexOf(arg) !== -1);
+        } else { // array to be recursed
+          return arg.every(this.isTagged, this);
+        }
+      }, this);
     };
 
     return {
