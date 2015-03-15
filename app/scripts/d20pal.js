@@ -96,13 +96,13 @@ var d20pal = (function() {
    * Creates a ChainLink for use with Chainable instances.
    * 
    * @constructor
-   * @param {ChainLink~modifierCallback | number} - A function accepting a value
+   * @param {ChainLink~modifierCallback | *} - A function accepting a value
    * appropriate for the Chainable that performs some calculation on it
-   * and returns the new value. If a number is supplied, a function will be
-   * created that only returns that number.
+   * and returns the new value. If a non-function is supplied, this chain
+   * link will simply return the value, no matter what the arguments are.
    */
   var ChainLink = function(modifierCallback) {
-    if (typeof modifierCallback === 'number') {
+    if (typeof modifierCallback !== 'function') {
       this.modifierCallback = function(oldVal) {
         return modifierCallback; // actually returns the number
       };
@@ -123,10 +123,23 @@ var d20pal = (function() {
   };
 
   /**
+   * Callback used as part of the ChainLink class.
+   * @callback ChainLink~modifierCallback
+   * @param {*} oldVal - value passed to this function from prior ChainLink.
+   * @param {object} params - Parameters used in calculation.
+   * @returns {*} Value returned should, in almost all cases, be the same
+   * type as `oldVal`.
+   */
+
+  /**
    * Creates a Chainable with the supplied name.
    *
    * @constructor
    * @param {string} name - Name of the property that is chainable.
+   * @param {Chainable} [startsWith] - Another Chainable whose final value is
+   * found before beginning to evaluate the current one; the result is passed
+   * to the first ChainLink in the created Chainable instance each time its
+   * value is requested.
    * 
    * @classdesc Chainables are properties than can be calculated by taking
    * some base value and passing it through multiple functions in a defined
@@ -134,6 +147,11 @@ var d20pal = (function() {
    */
   var Chainable = function(name) {
     this.name = name;
+    if (arguments.length > 1) {
+      this.startChain = arguments[1];
+    } else {
+      this.startChain = null;
+    }
     this.chainLinks = [];
   };
 
@@ -146,7 +164,8 @@ var d20pal = (function() {
       } else {
         if (priority === curLink.priority) {
           // Priorities are the same; try again with next highest
-          return this.addLink(newLink, priority+1);
+          this.addLink(newLink, priority+1);
+          return false;
         }
 
         this.chainLinks.splice(i, 0, newLink);
@@ -161,6 +180,18 @@ var d20pal = (function() {
     return newLink;
   };
 
+  Chainable.prototype.getFinal = function(params) {
+    var curVal = null;
+    if (this.startChain) {
+      curVal = this.startChain.getFinal(params);
+    }
+    this.chainLinks.forEach(function(link) {
+      curVal = link.evaluate(curVal, params);
+    }, this);
+
+    return curVal;
+  };
+
   /**
    * Creates a character.
    *
@@ -170,7 +201,8 @@ var d20pal = (function() {
   var Character = function(name) {
     this.name = name;
     this.strength = new Chainable('strength');
-    this.initstrength = new ChainLink(100);
+    var initstrength = new ChainLink(100);
+    this.strength.addLink(initstrength);
   };
 
   /**
