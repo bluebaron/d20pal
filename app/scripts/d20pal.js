@@ -1,7 +1,6 @@
 'use strict';
 
 /** @module d20pal */
-/* exported d20pal */
 var d20pal = (function() {
   /**
    * Merge defaults with user options (courtesy of gomakethings.com)
@@ -10,6 +9,7 @@ var d20pal = (function() {
    * @param {Object} defaults Default settings
    * @param {Object} options User options
    * @returns {Object} Merged values of defaults and options
+   * @memberof module:d20pal
    */
   var extend = function(defaults, options) {
       var extended = {};
@@ -31,21 +31,28 @@ var d20pal = (function() {
    * Allows for objects to maintain a list of tags.
    *
    * @mixin
+   * @memberof module:d20pal
    */
   var Taggable = (function() {
-    /**
-     * Tags an object with the first argument. Recurses through any arguments
-     * that are arrays.
-     *
-     * @param {...(string|string[])} tagString - String object will be tagged with.
-     */
 
+    /**
+     * Initializes the internal array of tags.
+     * @param {Object} obj - Object whose array is to be initialized.
+     * @memberof module:d20pal.Taggable
+     */
     function initTags(obj) {
       if (obj.tags === undefined) {
         obj.tags = [];
       }
     }
 
+    /**
+     * Tags an object with the first argument. Recurses through any arguments
+     * that are arrays.
+     *
+     * @param {...(string|string[])} tagString - String object will be tagged with.
+     * @memberof module:d20pal.Taggable
+     */
     var tag = function(tagString) {
       initTags(this);
       var args = Array.prototype.slice.call(arguments);
@@ -67,6 +74,7 @@ var d20pal = (function() {
      *
      * @param {...(string|string[])} tagString - Tags to check for.
      * @returns {bool} Whether or not the object was tagged with the supplied tags.
+     * @memberof module:d20pal.Taggable
      */
     var isTagged = function(tagString) {
       initTags(this);
@@ -100,6 +108,7 @@ var d20pal = (function() {
    * appropriate for the Chainable that performs some calculation on it
    * and returns the new value. If a non-function is supplied, this chain
    * link will simply return the value, no matter what the arguments are.
+   * @memberof module:d20pal
    */
   var ChainLink = function(modifierCallback) {
     if (typeof modifierCallback !== 'function') {
@@ -118,8 +127,8 @@ var d20pal = (function() {
    * @param {*} oldVal - Prior value, handed to this link.
    * @returns {*} Value after evaluating callback on parameter.
    */
-  ChainLink.prototype.evaluate = function(oldVal) {
-    return this.modifierCallback(oldVal);
+  ChainLink.prototype.evaluate = function(oldVal, params) {
+    return this.modifierCallback(oldVal, params);
   };
 
   /**
@@ -129,6 +138,7 @@ var d20pal = (function() {
    * @param {object} params - Parameters used in calculation.
    * @returns {*} Value returned should, in almost all cases, be the same
    * type as `oldVal`.
+   * @alias module:d20pal.ChainLink~modifierCallback
    */
 
   /**
@@ -144,6 +154,7 @@ var d20pal = (function() {
    * @classdesc Chainables are properties than can be calculated by taking
    * some base value and passing it through multiple functions in a defined
    * order determined by each link's priority.
+   * @memberof module:d20pal
    */
   var Chainable = function(name) {
     this.name = name;
@@ -197,12 +208,16 @@ var d20pal = (function() {
    *
    * @constructor
    * @param {string} name - The name of the character.
+   * @mixes module:d20pal.Taggable
+   * @memberof module:d20pal
    */
   var Character = function(name) {
     this.name = name;
     this.strength = new Chainable('strength');
     var initstrength = new ChainLink(100);
+    var doubler = new ChainLink(function(oldVal){return oldVal*2});
     this.strength.addLink(initstrength);
+    this.strength.addLink(doubler, 100);
   };
 
   /**
