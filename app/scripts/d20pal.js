@@ -133,8 +133,10 @@ var d20pal = (function() {
    */
   ChainLink.prototype.evaluate = function(oldVal, params) {
     console.log('ChainLink evaluate method called.');
-    console.log(oldVal, params, this.modifierCallback(oldVal, params));
-    return this.modifierCallback(oldVal, params);
+
+    var ret = this.modifierCallback(oldVal, params);
+    console.log(oldVal, params, ret);
+    return ret;
   };
 
   /**
@@ -224,12 +226,45 @@ var d20pal = (function() {
    */
   var Character = function(name) {
     this.name = name;
-    this.strength = new Chainable('strength');
-    var initstrength = new ChainLink(100);
+
+    var defaultAbilityScore = new ChainLink(10);
     var doubler = new ChainLink(function(oldVal){return oldVal*2});
-    this.strength.addLink(initstrength, 0);
-    this.strength.addLink(doubler, 100);
-    this.stats = [this.strength];
+    var abilityModifier = new ChainLink(function(oldVal){return Math.floor(oldVal/2)-5});
+
+    this.strength         = new Chainable('strength');
+    this.strengthmod      = new Chainable('strength-modifier', this.strength);
+    this.dexterity        = new Chainable('dexterity');
+    this.dexteritymod     = new Chainable('dexterity-modifier', this.dexterity);
+    this.constitution     = new Chainable('constitution');
+    this.constitutionmod  = new Chainable('constitution-modifier', this.constitution);
+    this.intelligence     = new Chainable('intelligence');
+    this.intelligencemod  = new Chainable('intelligence-modifier', this.intelligence);
+    this.wisdom           = new Chainable('wisdom');
+    this.wisdommod        = new Chainable('wisdom-modifier', this.wisdom);
+    this.charisma         = new Chainable('charisma');
+    this.charismamod      = new Chainable('charisma-modifier', this.charisma);
+
+    this.strength.addLink(defaultAbilityScore, 0);
+    this.strengthmod.addLink(abilityModifier, 0);
+    this.dexterity.addLink(defaultAbilityScore, 0);
+    this.dexteritymod.addLink(abilityModifier, 0);
+    this.constitution.addLink(defaultAbilityScore, 0);
+    this.constitutionmod.addLink(abilityModifier, 0);
+    this.intelligence.addLink(defaultAbilityScore, 0);
+    this.intelligencemod.addLink(abilityModifier, 0);
+    this.wisdom.addLink(defaultAbilityScore, 0);
+    this.wisdommod.addLink(abilityModifier, 0);
+    this.charisma.addLink(defaultAbilityScore, 0);
+    this.charismamod.addLink(abilityModifier, 0);
+
+    this.abilities = [
+      this.strength, this.strengthmod,
+      this.dexterity, this.dexteritymod,
+      this.constitution, this.constitutionmod,
+      this.intelligence, this.intelligencemod,
+      this.wisdom, this.wisdommod,
+      this.charisma, this.charismamod
+    ];
   };
 
   /**

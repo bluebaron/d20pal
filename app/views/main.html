@@ -13,8 +13,8 @@
   </div>
   <div class="col-sm-3" id="infopanel" ng-hide="selectedCharacter === null">
     <ul>
-      <li ng-repeat="stat in selectedCharacter.stats">
-        {{stat.name}}
+      <li class="ability ability-{{ability.name}}" ng-repeat="ability in selectedCharacter.abilities">
+        {{ability.getFinal()}}
       </li>
     </ul>
   </div>

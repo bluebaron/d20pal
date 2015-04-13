@@ -13,7 +13,7 @@ angular.module('d20palApp')
     var joe = new d20pal.Character('Joe');
     window.joe = joe;
     $scope.characters = [joe];
-    $scope.selectedCharacter = null;
+    $scope.selectedCharacter = $scope.characters[0];
 
     // Sets character highlighting in the UI
     var setCharacterHighlighted = function(character, hl) {
