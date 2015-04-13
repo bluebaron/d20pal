@@ -89,3 +89,20 @@ body {
     border-bottom: 0;
   }
 }
+
+/* Character list */
+#characterlist {
+  overflow-x: hidden;
+
+  > ul {
+    list-style-type: none;
+    padding-left: 0;
+
+    > li {
+      > div {
+        width: 100%;
+        text-align: center;
+      }
+    }
+  }
+}
