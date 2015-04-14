@@ -110,7 +110,8 @@ var d20pal = (function() {
    * link will simply return the value, no matter what the arguments are.
    * @memberof module:d20pal
    */
-  var ChainLink = function(modifierCallback) {
+  var ChainLink = function(modifierCallback, name) {
+    this.name = name || 'chainlink';
     console.log('Instantiating ChainLink.');
     if (typeof modifierCallback !== 'function') {
       console.log('Non-function modifierCallback.');
@@ -178,6 +179,14 @@ var d20pal = (function() {
     this.chainLinks = [];
   };
 
+  /**
+   * Adds a ChainLink to the Chainable.
+   *
+   * @param {ChainLink} newLink - Link to be added to the Chainable.
+   * @param {number} priority - Priority at which the link will be evaluated;
+   * lower priority links will be evaluated first.
+   * @return {ChainLink} The new link.
+   */
   Chainable.prototype.addLink = function(newLink, priority) {
     console.log('Adding link to Chainable "' + this.name + '"');
     newLink.priority = priority;
@@ -204,6 +213,12 @@ var d20pal = (function() {
     return newLink;
   };
 
+  /**
+   * Gets value of Chainable after the last link.
+   * 
+   * @param {object} params - Parameters used in evaluating the Chainable.
+   * @return {*} Result of evaluating every link in Chainable.
+   */
   Chainable.prototype.getFinal = function(params) {
     var curVal = null;
     if (this.startChain) {
@@ -217,6 +232,29 @@ var d20pal = (function() {
   };
 
   /**
+   * Gets the results of each ChainLink's evaluation.
+   *
+   * @param {object} params - Parameters used in chainable calculation.
+   * @return {array} Array of intermediate values used in evaluating
+   * the Chainable.
+   */
+  Chainable.prototype.getIntermediaries = function(params) {
+    var curVal = null;
+    if (this.startChain) {
+      curVal = this.startChain.getFinal(params);
+    }
+
+    var intermediaries = [];
+
+    this.chainLinks.forEach(function(link) {
+      curVal = link.evaluate(curVal, params);
+      intermediaries.push(curVal);
+    }, this);
+
+    return intermediaries;
+  };
+
+  /**
    * Creates a character.
    *
    * @constructor
@@ -227,9 +265,12 @@ var d20pal = (function() {
   var Character = function(name) {
     this.name = name;
 
-    var defaultAbilityScore = new ChainLink(10);
-    var doubler = new ChainLink(function(oldVal){return oldVal*2});
-    var abilityModifier = new ChainLink(function(oldVal){return Math.floor(oldVal/2)-5});
+    var defaultAbilityScore = new ChainLink(10, 'default ability score');
+    var doubler = new ChainLink(function(oldVal){return oldVal*2;}, 'doubler');
+    var abilityModifier = new ChainLink(function(oldVal){return Math.floor(oldVal/2)-5;}, 'ability modifier');
+
+    this.hp = new Chainable('hp');
+    this.hp.addLink(new ChainLink(12), 0);
 
     this.strength         = new Chainable('strength');
     this.strengthmod      = new Chainable('strength-modifier', this.strength);
@@ -243,6 +284,7 @@ var d20pal = (function() {
     this.wisdommod        = new Chainable('wisdom-modifier', this.wisdom);
     this.charisma         = new Chainable('charisma');
     this.charismamod      = new Chainable('charisma-modifier', this.charisma);
+    this.charismamod.addLink(doubler, 200); // TODO: remove, this is only for testing
 
     this.strength.addLink(defaultAbilityScore, 0);
     this.strengthmod.addLink(abilityModifier, 0);
@@ -254,7 +296,7 @@ var d20pal = (function() {
     this.intelligencemod.addLink(abilityModifier, 0);
     this.wisdom.addLink(defaultAbilityScore, 0);
     this.wisdommod.addLink(abilityModifier, 0);
-    this.charisma.addLink(defaultAbilityScore, 0);
+    this.charisma.addLink(/*defaultAbilityScore*/new ChainLink(15), 0);
     this.charismamod.addLink(abilityModifier, 0);
 
     this.abilities = [
@@ -265,6 +307,8 @@ var d20pal = (function() {
       this.wisdom, this.wisdommod,
       this.charisma, this.charismamod
     ];
+
+    this.chainables = [this.hp].concat(this.abilities);
   };
 
   /**

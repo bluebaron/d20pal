@@ -90,13 +90,17 @@ body {
   }
 }
 
+@mixin remove-list-styles {
+  padding-left: 0;
+  list-style-type: none;
+}
+
 /* Character list */
 #characterlist {
   overflow-x: hidden;
 
   > ul {
-    list-style-type: none;
-    padding-left: 0;
+    @include remove-list-styles;
 
     > li {
       > div {
@@ -107,34 +111,8 @@ body {
   }
 }
 
-#infopanel {
-  > ul {
-    list-style-type: none;
-    padding-left: 0;
-
-    > li.ability {
-      width: 50%;
-      float: left;
-    }
-  }
-}
-
-.ability {
-  width: 50%;
-  height: 30px;
-  box-sizing: border-box;
-  border-bottom: 1px solid #fff;
-  border-right: 1px solid #fff;
-  position: relative;
-  z-index: 10;
-
-  line-height: 30px;
-  font-size: 30px;
-  text-align: center;
-  font-weight: bold;
-}
-
-@mixin ability-abbreviation($abbr) {
+/* Ability and ability modifier styling */
+@mixin abbreviation-underlay($abbr) {
   content: $abbr;
   position: absolute;
   display: block;
@@ -146,80 +124,191 @@ body {
   opacity: 0.5;
 }
 
-.ability-strength {
-  background-color: #D46A6A;
-  color: #550000;
+#infopanel {
+  &::after {
+    content: '';
+    display: table;
+    clear: both;
+  }
+
+  > ul {
+    list-style-type: none;
+    padding-left: 0;
+
+    > li {
+      width: 100%;
+      height: 30px;
+      box-sizing: border-box;
+      border-bottom: 1px solid #fff;
+      border-right: 1px solid #fff;
+      position: relative;
+      z-index: 10;
+
+      line-height: 30px;
+      font-size: 30px;
+      text-align: center;
+      font-weight: bold;
+      float: left;
+
+      &.hp {
+        text-align: center;
+        padding-left: 50%;
+        color: red;
+
+        > .stat-abbr {
+          width: 100%;
+          right: 100%;
+          color: #000;
+        }
+      }
+
+      &.ability {
+        width: 50%;
+
+        &-strength {
+          background-color: #D46A6A;
+          color: #550000;
+
+          &-modifier {
+            background-color: #FFAAAA;
+          }
+
+          &::before {
+            @include abbreviation-underlay('STR');
+          }
+        }
+
+        &-dexterity {
+          background-color: #55AA55;
+          color: #004400;
+          
+          &-modifier {
+            background-color: #88CC88;
+          }
+
+          &::before {
+            @include abbreviation-underlay('DEX');
+          }
+        }
+
+        &-constitution {
+          background-color: #D49A6A;
+          color: #552700;
+          
+          &-modifier {
+            background-color: #FFD1AA;
+          }
+
+          &::before {
+            @include abbreviation-underlay('CON');
+          }
+        }
+
+        &-intelligence {
+          background-color: #4F628E;
+          color: #061539;
+          
+          &-modifier {
+            background-color: #7887AB;
+          }
+
+          &::before {
+            @include abbreviation-underlay('INT');
+          }
+        }
+
+        &-wisdom {
+          background-color: #764B8E;
+          color: #260339;
+          
+          &-modifier {
+            background-color: #9775AA;
+          }
+
+          &::before {
+            @include abbreviation-underlay('WIS');
+          }
+        }
+
+        &-charisma {
+          background-color: #D4D46A;
+          color: #555500;
+          
+          &-modifier {
+            background-color: #FFFFAA;
+          }
+
+          &::before {
+            @include abbreviation-underlay('CHA');
+          }
+        }
+      }
+
+    }
+  }
 }
 
-.ability-strength::before {
-  @include ability-abbreviation('STR');
-}
+#chainlinks {
+  > ul {
+    @include remove-list-styles;
+    $arrow-body-height: 30px;
+    $arrow-tip-height: 10px;
+    $arrow-width: 30px;
+    $arrow-color: #4f4;
+    $arrow-overlap: 0px;
+    $chain-link-spacing: 30px;
 
-.ability-strength-modifier {
-  background-color: #FFAAAA;
-}
+    > li {
+      position: relative;
+      display: block;
+      height: 60px;
+      background-color: #ccc;
+      border-radius: 5px;
+      border-bottom: 1px solid #666;
+      border-right: 1px solid #666;
+      padding: 10px;
+      text-align: center;
+      margin-bottom: $chain-link-spacing;
 
-.ability-dexterity {
-  background-color: #55AA55;
-  color: #004400;
-}
+      color: #fff;
+      font-weight: bold;
 
-.ability-dexterity::before {
-  @include ability-abbreviation('DEX');
-}
+      > .chainlinkresult {
+        display: block;
+        position: absolute;
+        bottom: $arrow-body-height * -1 + $arrow-overlap;
+        left: 50%;
+        width: $arrow-width;
+        height: $arrow-body-height;
+        margin-left: ($arrow-width/-2);
+        line-height: $arrow-body-height;
+        background-color: $arrow-color;
+        z-index: 10;
 
-.ability-dexterity-modifier {
-  background-color: #88CC88;
-}
-
-.ability-constitution {
-  background-color: #D49A6A;
-  color: #552700;
-}
-
-.ability-constitution::before {
-  @include ability-abbreviation('CON');
-}
-
-.ability-constitution-modifier {
-  background-color: #FFD1AA;
-}
-
-.ability-intelligence {
-  background-color: #4F628E;
-  color: #061539;
-}
-
-.ability-intelligence::before {
-  @include ability-abbreviation('INT');
-}
-
-.ability-intelligence-modifier {
-  background-color: #7887AB;
-}
-
-.ability-wisdom {
-  background-color: #764B8E;
-  color: #260339;
-}
-
-.ability-wisdom::before {
-  @include ability-abbreviation('WIS');
-}
-
-.ability-wisdom-modifier {
-  background-color: #9775AA;
-}
-
-.ability-charisma {
-  background-color: #D4D46A;
-  color: #555500;
-}
-
-.ability-charisma::before {
-  @include ability-abbreviation('CHA');
-}
-
-.ability-charisma-modifier {
-  background-color: #FFFFAA;
+        /* Lil triangles to make an arrow */
+        &::before {
+          content: ' ';
+          display: block;
+          position: absolute;
+          bottom: 100%;
+          width: 0;
+          height: 0;
+          border-left: $arrow-width/2 solid $arrow-color;
+          border-right: $arrow-width/2 solid $arrow-color;
+          border-top: $arrow-tip-height solid transparent;
+        }
+        &::after {
+          content: ' ';
+          display: block;
+          position: absolute;
+          top: $arrow-body-height;
+          width: 0;
+          height: 0;
+          border-left: $arrow-width/2 solid transparent;
+          border-right: $arrow-width/2 solid transparent;
+          border-top: $arrow-tip-height solid $arrow-color;
+        }
+      }
+    }
+  }
 }

@@ -13,13 +13,26 @@
   </div>
   <div class="col-sm-3" id="infopanel" ng-hide="selectedCharacter === null">
     <ul>
-      <li class="ability ability-{{ability.name}}" ng-repeat="ability in selectedCharacter.abilities">
-        {{ability.getFinal()}}
+      <li
+        ng-repeat="chainable in selectedCharacter.chainables"
+        ng-click="selectChainable($index)"
+        class="{{getApplicableClasses(chainable.name)}}">
+        {{chainable.getFinal()}}
+        <span class="stat-abbr" ng-if="chainable.abbreviation">{{chainable.abbreviation}}</span>
       </li>
     </ul>
   </div>
-  <div class="col-sm-3">
-  &nbsp;
+  <div class="col-sm-3" id="chainlinks">
+    <ul>
+      <li ng-hide="(selectedChainable.startChain === null)">
+        {{selectedChainable.startChain.name}}
+        <span class="chainlinkresult">{{selectedChainable.startChain.getFinal()}}</span>
+      </li>
+      <li ng-repeat="link in selectedChainable.chainLinks">
+        {{link.name}}
+        <span class="chainlinkresult">{{selectedChainableIntermediaries[$index]}}</span>
+      </li>
+    </ul>
   </div>
   <div class="col-sm-3">
   &nbsp;
