@@ -82,4 +82,31 @@ angular.module('d20palApp')
       return applicableClasses.join(' ');
     };
 
+    $scope.getAbbreviation = function(name) {
+      var idx = null; 
+      $scope.selectedCharacter.chainables.forEach(function(chain, i) {
+        if (chain.name === name) idx = i;
+      });
+
+      if (idx !== null) {
+        var chain = $scope.selectedCharacter.chainables[idx];
+        switch (chain.name) {
+          case 'strength':
+          case 'dexterity':
+          case 'constitution':
+          case 'intelligence':
+          case 'wisdom':
+          case 'charisma':
+            return chain.name.substr(0,3).toUpperCase();
+            break;
+          case 'hp':
+          case 'ac': 
+            return chain.name.toUpperCase();
+            break;
+          default:
+            return;
+        }
+      }
+    };
+
   });

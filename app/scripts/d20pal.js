@@ -112,15 +112,15 @@ var d20pal = (function() {
    */
   var ChainLink = function(modifierCallback, name) {
     this.name = name || 'chainlink';
-    console.log('Instantiating ChainLink.');
+    //console.log('Instantiating ChainLink.');
     if (typeof modifierCallback !== 'function') {
-      console.log('Non-function modifierCallback.');
+      //console.log('Non-function modifierCallback.');
       this.modifierCallback = function(oldVal) {
-        console.log('ChainLink default non-function modifierCallback called; returning value ' + modifierCallback);
+        //console.log('ChainLink default non-function modifierCallback called; returning value ' + modifierCallback);
         return modifierCallback; // actually returns the number
       };
     } else {
-      console.log('Typical modifierCallback.');
+      //console.log('Typical modifierCallback.');
       this.modifierCallback = modifierCallback;
     }
   };
@@ -133,12 +133,16 @@ var d20pal = (function() {
    * @returns {*} Value after evaluating callback on parameter.
    */
   ChainLink.prototype.evaluate = function(oldVal, params) {
-    console.log('ChainLink evaluate method called.');
+    //console.log('ChainLink evaluate method called.');
 
     var ret = this.modifierCallback(oldVal, params);
-    console.log(oldVal, params, ret);
+    //console.log(oldVal, params, ret);
     return ret;
   };
+
+  // Make ChainLinks taggable
+
+  ChainLink.prototype = extend(ChainLink.prototype, Taggable);
 
   /**
    * Callback used as part of the ChainLink class.
@@ -149,6 +153,8 @@ var d20pal = (function() {
    * type as `oldVal`.
    * @alias module:d20pal.ChainLink~modifierCallback
    */
+
+  // End of ChainLink class
 
   /**
    * Creates a Chainable with the supplied name.
@@ -166,14 +172,14 @@ var d20pal = (function() {
    * @memberof module:d20pal
    */
   var Chainable = function(name) {
-    console.log('Instantiating Chainable ' + name + '.');
+    //console.log('Instantiating Chainable ' + name + '.');
     this.name = name;
     if (arguments.length > 1) {
       this.startChain = arguments[1];
-      console.log('Start chain included: ' + arguments[1].name);
+      //console.log('Start chain included: ' + arguments[1].name);
     } else {
       this.startChain = null;
-      console.log('Independent chain.');
+      //console.log('Independent chain.');
     }
 
     this.chainLinks = [];
@@ -188,7 +194,7 @@ var d20pal = (function() {
    * @return {ChainLink} The new link.
    */
   Chainable.prototype.addLink = function(newLink, priority) {
-    console.log('Adding link to Chainable "' + this.name + '"');
+    //console.log('Adding link to Chainable "' + this.name + '"');
     newLink.priority = priority;
 
     var res = this.chainLinks.every(function(curLink, i) {
@@ -254,6 +260,8 @@ var d20pal = (function() {
     return intermediaries;
   };
 
+  // End of Chainable class
+
   /**
    * Creates a character.
    *
@@ -270,7 +278,16 @@ var d20pal = (function() {
     var abilityModifier = new ChainLink(function(oldVal){return Math.floor(oldVal/2)-5;}, 'ability modifier');
 
     this.hp = new Chainable('hp');
-    this.hp.addLink(new ChainLink(12), 0);
+    this.hp.addLink(new ChainLink(12, 'default hp'), 0);
+    this.ac = new Chainable('ac');
+    this.ac.addLink(new ChainLink(12, 'default ac'), 0);
+
+    this.fortitude = new Chainable('fortitude');
+    this.fortitude.addLink(new ChainLink(13, 'default fortitude'));
+    this.reflex = new Chainable('reflex');
+    this.reflex.addLink(new ChainLink(13, 'default reflex'));
+    this.will = new Chainable('will');
+    this.will.addLink(new ChainLink(13, 'default will'));
 
     this.strength         = new Chainable('strength');
     this.strengthmod      = new Chainable('strength-modifier', this.strength);
@@ -308,7 +325,7 @@ var d20pal = (function() {
       this.charisma, this.charismamod
     ];
 
-    this.chainables = [this.hp].concat(this.abilities);
+    this.chainables = [this.hp, this.ac].concat(this.abilities).concat([this.fortitude, this.reflex, this.will]);
   };
 
   /**
@@ -330,6 +347,9 @@ var d20pal = (function() {
   // Make Characters taggable
   Character.prototype = extend(Character.prototype, Taggable);
 
+  // End of Character class
+
+  // Exporting module's public fields
   return {
     Character: Character
   };

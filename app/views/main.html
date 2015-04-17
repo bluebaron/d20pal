@@ -17,8 +17,8 @@
         ng-repeat="chainable in selectedCharacter.chainables"
         ng-click="selectChainable($index)"
         class="{{getApplicableClasses(chainable.name)}}">
+        <span class="stat-abbr" ng-if="getAbbreviation(chainable.name) !== null">{{getAbbreviation(chainable.name)}}</span>
         {{chainable.getFinal()}}
-        <span class="stat-abbr" ng-if="chainable.abbreviation">{{chainable.abbreviation}}</span>
       </li>
     </ul>
   </div>
