@@ -110,7 +110,7 @@ var d20pal = (function() {
    * link will simply return the value, no matter what the arguments are.
    * @memberof module:d20pal
    */
-  var ChainLink = function(modifierCallback, name) {
+  var ChainLink = function(name, modifierCallback) {
     this.name = name || 'chainlink';
     //console.log('Instantiating ChainLink.');
     if (typeof modifierCallback !== 'function') {
@@ -140,6 +140,44 @@ var d20pal = (function() {
     return ret;
   };
 
+  /**
+   * Gets an object representation of the ChainLink to be used in the
+   * serialization of a character.
+   *
+   * @returns {Object} Object representation of the ChainLink.
+   */
+  ChainLink.prototype.getRepresentation = function() {
+    this.tag(); // initializes tags in case they weren't already
+
+    var obj = {
+      name: this.name,
+      tags: this.tags
+    };
+
+    return obj;
+  };
+
+  ChainLink.registerType = function(type, constructor) {
+    if (ChainLink.types === undefined) {
+      ChainLink.types = {};
+    }
+
+    ChainLink.types[type] = constructor;
+  };
+
+  ChainLink.fromRepresentation = function(rep) {
+    var type = 'default';
+    for (var i = 0; i < ChainLink.types.length; i++) {
+      if (ChainLink.types[tag] !== undefined) {
+        return ChainLink.types[tag].fromRepresentation(rep);
+      }
+    };
+
+    var chainlink = new ChainLink(rep.name);
+    rep.tags.forEach(function(tag){chainlink.tag(tag)});
+    return chainlink;
+  };
+
   // Make ChainLinks taggable
 
   ChainLink.prototype = extend(ChainLink.prototype, Taggable);
@@ -156,6 +194,56 @@ var d20pal = (function() {
 
   // End of ChainLink class
 
+  // ChainLink subclasses
+
+  function StaticChainLink(name, value) {
+    var callback = function(){return value;};
+    ChainLink.call(this, name, callback);
+    this.tag('static');
+  }
+  StaticChainLink.prototype = Object.create(ChainLink.prototype);
+  StaticChainLink.prototype.constructor = StaticChainLink;
+  ChainLink.registerType('static', StaticChainLink);
+
+  StaticChainLink.fromRepresentation = function(rep) {
+    var schainlink = new StaticChainLink(rep.name, rep.value);
+    schainlink.tag(rep.tags);
+
+    return schainlink;
+  };
+
+  StaticChainLink.prototype.getRepresentation = function() {
+    var rep = ChainLink.prototype.getRepresentation.call(this);
+    rep.value = this.value;
+
+    return rep;
+  };
+
+  function MultiplierChainLink(name, multiplier) {
+    var callback = function(oldVal){return oldVal*multiplier;};
+    ChainLink.call(this, name, callback);
+    this.tag('multiplier');
+  }
+  MultiplierChainLink.prototype = Object.create(ChainLink.prototype);
+  MultiplierChainLink.prototype.constructor = MultiplierChainLink;
+  ChainLink.registerType('multiplier', MultiplierChainLink);
+
+  MultiplierChainLink.fromRepresentation = function(rep) {
+    var mchainlink = new MultiplierChainLink(rep.name, rep.multiplier);
+    mchainlink.tag(rep.tags);
+    
+    return mchainlink;
+  };
+
+  MultiplierChainLink.prototype.getRepresentation = function() {
+    var rep = ChainLink.prototype.getRepresentation.call(this);
+    rep.multiplier = this.multiplier;
+
+    return rep;
+  };
+    
+  // End of ChainLink subclasses
+
   /**
    * Creates a Chainable with the supplied name.
    *
@@ -171,16 +259,10 @@ var d20pal = (function() {
    * order determined by each link's priority.
    * @memberof module:d20pal
    */
-  var Chainable = function(name) {
+  var Chainable = function(name, startChain) {
     //console.log('Instantiating Chainable ' + name + '.');
-    this.name = name;
-    if (arguments.length > 1) {
-      this.startChain = arguments[1];
-      //console.log('Start chain included: ' + arguments[1].name);
-    } else {
-      this.startChain = null;
-      //console.log('Independent chain.');
-    }
+    this.name = name || 'chainable';
+    this.startChain = startChain || null;
 
     this.chainLinks = [];
   };
@@ -260,6 +342,37 @@ var d20pal = (function() {
     return intermediaries;
   };
 
+  /**
+   * Gets an object representation of the Chainable for use in the
+   * serialization of a character.
+   *
+   * @returns {Object} Object representation of Chainable.
+   */
+  Chainable.prototype.getRepresentation = function() {
+    var chainlinks = this.chainLinks.map(function(chainlink) {
+      return chainlink.getRepresentation();
+    });
+
+    var obj = {
+      name: this.name,
+      startChain: this.startChain,
+      chainlinks: chainlinks
+    };
+
+    return obj;
+  };
+
+  Chainable.fromRepresentation = function(rep) {
+    // TODO: add support for startchains in serialization
+    var chain = new Chainable(rep.name);
+    rep.chainlinks.forEach(function(linkRep) {
+      var chainlink = ChainLink.fromRepresentation(linkRep);
+      chain.addLink(chainlink, linkRep.priority);
+    });
+
+    return chain;
+  };
+
   // End of Chainable class
 
   /**
@@ -273,59 +386,59 @@ var d20pal = (function() {
   var Character = function(name) {
     this.name = name;
 
-    var defaultAbilityScore = new ChainLink(10, 'default ability score');
-    var doubler = new ChainLink(function(oldVal){return oldVal*2;}, 'doubler');
-    var abilityModifier = new ChainLink(function(oldVal){return Math.floor(oldVal/2)-5;}, 'ability modifier');
+    var defaultAbilityScore = new StaticChainLink('default ability score', 10);
+    var doubler = new MultiplierChainLink('doubler', 2);
+    var abilityModifier = new ChainLink('ability modifier', function(oldVal){return Math.floor(oldVal/2)-5;});
 
-    this.hp = new Chainable('hp');
-    this.hp.addLink(new ChainLink(12, 'default hp'), 0);
-    this.ac = new Chainable('ac');
-    this.ac.addLink(new ChainLink(12, 'default ac'), 0);
+    var hp = new Chainable('hp');
+    hp.addLink(new StaticChainLink('default hp', 12), 0);
+    var ac = new Chainable('ac');
+    ac.addLink(new StaticChainLink('default ac', 12), 0);
 
-    this.fortitude = new Chainable('fortitude');
-    this.fortitude.addLink(new ChainLink(13, 'default fortitude'));
-    this.reflex = new Chainable('reflex');
-    this.reflex.addLink(new ChainLink(13, 'default reflex'));
-    this.will = new Chainable('will');
-    this.will.addLink(new ChainLink(13, 'default will'));
+    var fortitude = new Chainable('fortitude');
+    fortitude.addLink(new StaticChainLink('default fortitude', 13));
+    var reflex = new Chainable('reflex');
+    reflex.addLink(new StaticChainLink('default reflex', 13));
+    var will = new Chainable('will');
+    will.addLink(new StaticChainLink('default will', 13));
 
-    this.strength         = new Chainable('strength');
-    this.strengthmod      = new Chainable('strength-modifier', this.strength);
-    this.dexterity        = new Chainable('dexterity');
-    this.dexteritymod     = new Chainable('dexterity-modifier', this.dexterity);
-    this.constitution     = new Chainable('constitution');
-    this.constitutionmod  = new Chainable('constitution-modifier', this.constitution);
-    this.intelligence     = new Chainable('intelligence');
-    this.intelligencemod  = new Chainable('intelligence-modifier', this.intelligence);
-    this.wisdom           = new Chainable('wisdom');
-    this.wisdommod        = new Chainable('wisdom-modifier', this.wisdom);
-    this.charisma         = new Chainable('charisma');
-    this.charismamod      = new Chainable('charisma-modifier', this.charisma);
-    this.charismamod.addLink(doubler, 200); // TODO: remove, this is only for testing
+    var strength         = new Chainable('strength');
+    var strengthmod      = new Chainable('strength-modifier', strength);
+    var dexterity        = new Chainable('dexterity');
+    var dexteritymod     = new Chainable('dexterity-modifier', dexterity);
+    var constitution     = new Chainable('constitution');
+    var constitutionmod  = new Chainable('constitution-modifier', constitution);
+    var intelligence     = new Chainable('intelligence');
+    var intelligencemod  = new Chainable('intelligence-modifier', intelligence);
+    var wisdom           = new Chainable('wisdom');
+    var wisdommod        = new Chainable('wisdom-modifier', wisdom);
+    var charisma         = new Chainable('charisma');
+    var charismamod      = new Chainable('charisma-modifier', charisma);
+    charismamod.addLink(doubler, 200); // TODO: remove, this is only for testing
 
-    this.strength.addLink(defaultAbilityScore, 0);
-    this.strengthmod.addLink(abilityModifier, 0);
-    this.dexterity.addLink(defaultAbilityScore, 0);
-    this.dexteritymod.addLink(abilityModifier, 0);
-    this.constitution.addLink(defaultAbilityScore, 0);
-    this.constitutionmod.addLink(abilityModifier, 0);
-    this.intelligence.addLink(defaultAbilityScore, 0);
-    this.intelligencemod.addLink(abilityModifier, 0);
-    this.wisdom.addLink(defaultAbilityScore, 0);
-    this.wisdommod.addLink(abilityModifier, 0);
-    this.charisma.addLink(/*defaultAbilityScore*/new ChainLink(15), 0);
-    this.charismamod.addLink(abilityModifier, 0);
+    strength.addLink(defaultAbilityScore, 0);
+    strengthmod.addLink(abilityModifier, 0);
+    dexterity.addLink(defaultAbilityScore, 0);
+    dexteritymod.addLink(abilityModifier, 0);
+    constitution.addLink(defaultAbilityScore, 0);
+    constitutionmod.addLink(abilityModifier, 0);
+    intelligence.addLink(defaultAbilityScore, 0);
+    intelligencemod.addLink(abilityModifier, 0);
+    wisdom.addLink(defaultAbilityScore, 0);
+    wisdommod.addLink(abilityModifier, 0);
+    charisma.addLink(/*defaultAbilityScore*/new ChainLink('default charisma', 15), 0);
+    charismamod.addLink(abilityModifier, 0);
 
-    this.abilities = [
-      this.strength, this.strengthmod,
-      this.dexterity, this.dexteritymod,
-      this.constitution, this.constitutionmod,
-      this.intelligence, this.intelligencemod,
-      this.wisdom, this.wisdommod,
-      this.charisma, this.charismamod
+    this.chainables = [
+      hp, ac,
+      strength, strengthmod,
+      dexterity, dexteritymod,
+      constitution, constitutionmod,
+      intelligence, intelligencemod,
+      wisdom, wisdommod,
+      charisma, charismamod,
+      fortitude, reflex, will
     ];
-
-    this.chainables = [this.hp, this.ac].concat(this.abilities).concat([this.fortitude, this.reflex, this.will]);
   };
 
   /**
@@ -342,6 +455,39 @@ var d20pal = (function() {
    */
   Character.prototype.getName = function() {
     return this.name;
+  };
+
+  /**
+   * Gets a serialized representation of a character so that it can be saved
+   * and stored offline or anywhere else and loaded later.
+   *
+   * @returns {String} JSON representation of the Character.
+   */
+  Character.prototype.serialize = function() {
+    var chainables = this.chainables.map(function(chainable) {
+      return chainable.getRepresentation();
+    });
+    
+    var obj = {
+      name: this.name,
+      tags: this.tags,
+      chainables: chainables
+    };
+
+    return JSON.stringify(obj);
+  };
+  
+  Character.fromString = function(str) {
+    var obj = JSON.parse(str),
+        character = new Character(obj.name);
+
+    character.tags = [];
+    character.tag(obj.tags);
+    character.chainables = obj.chainables.map(function(chainableRep) {
+      return Chainable.fromRepresentation(chainableRep);
+    });
+
+    return character;
   };
 
   // Make Characters taggable

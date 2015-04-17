@@ -72,6 +72,11 @@ angular.module('d20palApp')
           applicableClasses.push('ability');
           applicableClasses.push('ability-' + name);
           break;
+        case 'fortitude':
+        case 'reflex':
+        case 'will':
+          applicableClasses.push(name);
+          break;
         case 'hp':
           applicableClasses.push('hp');
           break;
@@ -85,7 +90,9 @@ angular.module('d20palApp')
     $scope.getAbbreviation = function(name) {
       var idx = null; 
       $scope.selectedCharacter.chainables.forEach(function(chain, i) {
-        if (chain.name === name) idx = i;
+        if (chain.name === name) {
+          idx = i;
+        }
       });
 
       if (idx !== null) {
@@ -97,12 +104,14 @@ angular.module('d20palApp')
           case 'intelligence':
           case 'wisdom':
           case 'charisma':
+          case 'reflex':
             return chain.name.substr(0,3).toUpperCase();
-            break;
+          case 'fortitude':
+          case 'will':
+            return chain.name.substr(0,4).toUpperCase();
           case 'hp':
           case 'ac': 
             return chain.name.toUpperCase();
-            break;
           default:
             return;
         }
