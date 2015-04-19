@@ -10,9 +10,7 @@
         <div ng-class="{'selected-character': character.selected}" ng-click="selectCharacter($index)">{{character.name}}</div>
       </li>
     </ul>
-  </div>
-  <div class="col-sm-3" id="infopanel" ng-hide="selectedCharacter === null">
-    <ul>
+    <ul id="infopanel">
       <li
         ng-repeat="chainable in selectedCharacter.chainables"
         ng-click="selectChainable($index)"
@@ -21,6 +19,8 @@
         {{chainable.getFinal()}}
       </li>
     </ul>
+  </div>
+  <div class="col-sm-3" ng-hide="selectedCharacter === null">
   </div>
   <div class="col-sm-3" id="chainlinks">
     <ul>

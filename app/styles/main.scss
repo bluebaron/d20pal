@@ -142,95 +142,93 @@ $charisma-color: #D4D46A;
     clear: both;
   }
 
-  > ul {
-    list-style-type: none;
-    padding-left: 0;
+  list-style-type: none;
+  padding-left: 0;
 
-    > li {
-      @include clickable;
-      width: 100%;
-      height: 30px;
-      box-sizing: border-box;
-      border-bottom: 1px solid #fff;
-      border-right: 1px solid #fff;
-      position: relative;
-      z-index: 10;
-      color: #111;
+  > li {
+    @include clickable;
+    width: 100%;
+    height: 30px;
+    box-sizing: border-box;
+    border-bottom: 1px solid #fff;
+    border-right: 1px solid #fff;
+    position: relative;
+    z-index: 10;
+    color: #111;
 
-      line-height: 30px;
-      font-size: 30px;
+    line-height: 30px;
+    font-size: 30px;
+    text-align: center;
+    font-weight: bold;
+    float: left;
+    padding-left: 50%;
+
+    > .stat-abbr {
+      display: block;
+      width: 50%;
+      right: 50%;
+      position: absolute;
+      z-index: -1;
+      font-weight: normal;
+    }
+
+    &.hp {
       text-align: center;
-      font-weight: bold;
-      float: left;
-      padding-left: 50%;
+      color: red;
 
       > .stat-abbr {
-        display: block;
         width: 50%;
         right: 50%;
-        position: absolute;
-        z-index: -1;
-        font-weight: normal;
+        color: lighten(#000, 15);
       }
-
-      &.hp {
-        text-align: center;
-        color: red;
-
-        > .stat-abbr {
-          width: 50%;
-          right: 50%;
-          color: lighten(#000, 15);
-        }
-      }
-
-      &.ability {
-        width: 50%;
-        padding: 0;
-
-        @mixin ability-colors($color) {
-          background-color: $color;
-          
-          &-modifier {
-            background-color: lighten($color, 20);
-          }
-
-          > .stat-abbr {
-            color: darken($color, 15);
-          }
-        }
-        
-        > .stat-abbr {
-          right: 0;
-          width: 100%;
-        }
-
-        &-strength {
-          @include ability-colors($strength-color);
-        }
-
-        &-dexterity {
-          @include ability-colors($dexterity-color);
-        }
-
-        &-constitution {
-          @include ability-colors($constitution-color); 
-        }
-
-        &-intelligence {
-          @include ability-colors($intelligence-color); 
-        }
-
-        &-wisdom {
-          @include ability-colors($wisdom-color); 
-        }
-
-        &-charisma {
-          @include ability-colors($charisma-color); 
-        }
-      }
-
     }
+
+    &.ability {
+      width: 50%;
+      padding: 0;
+
+      @mixin ability-colors($color) {
+        background-color: $color;
+        
+        &-modifier {
+          background-color: lighten($color, 20);
+        }
+
+        > .stat-abbr {
+          color: darken($color, 15);
+        }
+      }
+      
+      > .stat-abbr {
+        right: 0;
+        width: 100%;
+      }
+
+      &-strength {
+        @include ability-colors($strength-color);
+      }
+
+      &-dexterity {
+        @include ability-colors($dexterity-color);
+      }
+
+      &-constitution {
+        @include ability-colors($constitution-color); 
+      }
+
+      &-intelligence {
+        @include ability-colors($intelligence-color); 
+      }
+
+      &-wisdom {
+        @include ability-colors($wisdom-color); 
+      }
+
+      &-charisma {
+        @include ability-colors($charisma-color); 
+      }
+    }
+
   }
 }
 
@@ -242,87 +240,119 @@ $charisma-color: #D4D46A;
     $arrow-width: 30px;
     $arrow-color: #4f4;
     $arrow-overlap: 0px;
+    $chain-link-height: 30px;
     $chain-link-spacing: 30px;
+    $chain-link-padding: 10px;
 
     > li {
-      @include clickable;
-      position: relative;
-      display: block;
-      height: 60px;
-      background-color: #ccc;
-      border-radius: 5px;
-      border-bottom: 1px solid #666;
-      border-right: 1px solid #666;
-      padding: 10px;
-      margin-bottom: $chain-link-spacing;
-
-      text-align: center;
-      font-weight: bold;
-      color: #fff;
-
-      /* Animation for chainlinks */
-      &.ng-enter {
-        transition: 0.5s ease-out all;
+      > .chainlinkcontainer {
+        @include clickable;
         position: relative;
-        top: -15px;
-        opacity: 0;
+        display: block;
+        height: 60px;
+        background-color: #ccc;
+        padding: $chain-link-padding;
+        margin-bottom: $chain-link-spacing;
+        border-radius: 10px;
+
+        text-align: center;
+        font-weight: bold;
+        color: #fff;
+
+        > .chainlinkresult {
+          display: block;
+          position: absolute;
+          bottom: $arrow-body-height * -1 + $arrow-overlap;
+          left: 50%;
+          width: $arrow-width;
+          height: $arrow-body-height;
+          margin-left: ($arrow-width/-2);
+          line-height: $arrow-body-height;
+          background-color: $arrow-color;
+          z-index: 10;
+
+          /* Lil triangles to make an arrow */
+          &::before {
+            content: ' ';
+            display: block;
+            position: absolute;
+            bottom: 100%;
+            width: 0;
+            height: 0;
+            border-left: $arrow-width/2 solid $arrow-color;
+            border-right: $arrow-width/2 solid $arrow-color;
+            border-top: $arrow-tip-height solid transparent;
+          }
+          &::after {
+            content: ' ';
+            display: block;
+            position: absolute;
+            top: $arrow-body-height;
+            width: 0;
+            height: 0;
+            border-left: $arrow-width/2 solid transparent;
+            border-right: $arrow-width/2 solid transparent;
+            border-top: $arrow-tip-height solid $arrow-color;
+          }
+        }
       }
-      
-      &.ng-enter.ng-enter-active {
-        top: 0px;
-        opacity: 1;
+      /* Animation for chainlinks */
+      $enter-duration: 1s;
+      $move-duration: 0.5s;
+      $leave-duration: 1s;
+
+      &.ng-enter {
+        transition: all $enter-duration ease-out;
+        height: 0px;
+        padding-top: 0;
+        padding-bottom: 0;
+        margin-bottom: 0;
+
+        > .chainlinkresult {
+          display: none;
+        }
+
+        &-active {
+          transition: all $enter-duration ease-out;
+          height: $chain-link-height;
+          padding-top: $chain-link-padding;
+          padding-bottom: $chain-link-padding;
+          margin-bottom: $chain-link-spacing;
+        }
+
+        &-stagger {
+          transition-delay: 0.1s;
+        }
       }
 
-      &.ng-enter-stagger {
-        transition-delay: 0.1s;
+      &.ng-move {
+        transition: 0.3s ease all;
+
+        &-stagger {
+          transition-delay: 0.1s;
+        }
       }
 
       &.ng-leave {
-        transition: 0.5s ease-out all;
-        position: relative;
-        left: 0;
-        opacity: 1;
-      }
-      
-      &.ng-leave-active {
-        left: 15px;
-        opacity: 0;
-      }
+        transition: $leave-duration ease all;
+        height: $chain-link-height;
+        padding-top: $chain-link-padding;
+        padding-bottom: $chain-link-padding;
+        margin-bottom: $chain-link-spacing;
 
-      > .chainlinkresult {
-        display: block;
-        position: absolute;
-        bottom: $arrow-body-height * -1 + $arrow-overlap;
-        left: 50%;
-        width: $arrow-width;
-        height: $arrow-body-height;
-        margin-left: ($arrow-width/-2);
-        line-height: $arrow-body-height;
-        background-color: $arrow-color;
-        z-index: 10;
-
-        /* Lil triangles to make an arrow */
-        &::before {
-          content: ' ';
-          display: block;
-          position: absolute;
-          bottom: 100%;
-          width: 0;
-          height: 0;
-          border-left: $arrow-width/2 solid $arrow-color;
-          border-right: $arrow-width/2 solid $arrow-color;
-          border-top: $arrow-tip-height solid transparent;
+        > .chainlinkresult {
+          display: none;
         }
-        &::after {
-          content: ' ';
-          display: block;
-          position: absolute;
-          top: $arrow-body-height;
-          width: 0;
+
+        &-active {
           height: 0;
-          border-left: $arrow-width/2 solid transparent;
-          border-right: $arrow-width/2 solid transparent;
-          border-top: $arrow-tip-height solid $arrow-color;
+          padding-top: 0;
+          padding-bottom: 0;
+          margin-bottom: 0;
+        }
+
+        &-stagger {
+          transition-delay: 0.1s;
         }
       }
     }
