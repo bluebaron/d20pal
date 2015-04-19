@@ -194,55 +194,77 @@ var d20pal = (function() {
 
   // End of ChainLink class
 
-  // ChainLink subclasses
+  /**
+   * Namespace for extra classes useful for most d20-based games
+   * @namespace
+   * @memberof module:d20pal
+   */
+  var util = (function() {
+    /**
+     * StaticChainLinks will output only one value, given at its creation.
+     * @class
+     * @extends module:d20pal.ChainLink
+     * @memberof module:d20pal.util
+     */
+    function StaticChainLink(name, value) {
+      var callback = function(){return value;};
+      ChainLink.call(this, name, callback);
+      this.tag('static');
+    }
+    StaticChainLink.prototype = Object.create(ChainLink.prototype);
+    StaticChainLink.prototype.constructor = StaticChainLink;
+    ChainLink.registerType('static', StaticChainLink);
 
-  function StaticChainLink(name, value) {
-    var callback = function(){return value;};
-    ChainLink.call(this, name, callback);
-    this.tag('static');
-  }
-  StaticChainLink.prototype = Object.create(ChainLink.prototype);
-  StaticChainLink.prototype.constructor = StaticChainLink;
-  ChainLink.registerType('static', StaticChainLink);
+    StaticChainLink.fromRepresentation = function(rep) {
+      var schainlink = new StaticChainLink(rep.name, rep.value);
+      schainlink.tag(rep.tags);
 
-  StaticChainLink.fromRepresentation = function(rep) {
-    var schainlink = new StaticChainLink(rep.name, rep.value);
-    schainlink.tag(rep.tags);
+      return schainlink;
+    };
 
-    return schainlink;
-  };
+    StaticChainLink.prototype.getRepresentation = function() {
+      var rep = ChainLink.prototype.getRepresentation.call(this);
+      rep.value = this.value;
 
-  StaticChainLink.prototype.getRepresentation = function() {
-    var rep = ChainLink.prototype.getRepresentation.call(this);
-    rep.value = this.value;
+      return rep;
+    };
 
-    return rep;
-  };
+    /**
+     * MultiplierChainLinks will accept any value and return its
+     * product with another value given at its creation.
+     * @class
+     * @extends ChainLink
+     */
+    function MultiplierChainLink(name, multiplier) {
+      var callback = function(oldVal){return oldVal*multiplier;};
+      ChainLink.call(this, name, callback);
+      this.tag('multiplier');
+    }
+    MultiplierChainLink.prototype = Object.create(ChainLink.prototype);
+    MultiplierChainLink.prototype.constructor = MultiplierChainLink;
+    ChainLink.registerType('multiplier', MultiplierChainLink);
 
-  function MultiplierChainLink(name, multiplier) {
-    var callback = function(oldVal){return oldVal*multiplier;};
-    ChainLink.call(this, name, callback);
-    this.tag('multiplier');
-  }
-  MultiplierChainLink.prototype = Object.create(ChainLink.prototype);
-  MultiplierChainLink.prototype.constructor = MultiplierChainLink;
-  ChainLink.registerType('multiplier', MultiplierChainLink);
+    MultiplierChainLink.fromRepresentation = function(rep) {
+      var mchainlink = new MultiplierChainLink(rep.name, rep.multiplier);
+      mchainlink.tag(rep.tags);
+      
+      return mchainlink;
+    };
 
-  MultiplierChainLink.fromRepresentation = function(rep) {
-    var mchainlink = new MultiplierChainLink(rep.name, rep.multiplier);
-    mchainlink.tag(rep.tags);
-    
-    return mchainlink;
-  };
+    MultiplierChainLink.prototype.getRepresentation = function() {
+      var rep = ChainLink.prototype.getRepresentation.call(this);
+      rep.multiplier = this.multiplier;
 
-  MultiplierChainLink.prototype.getRepresentation = function() {
-    var rep = ChainLink.prototype.getRepresentation.call(this);
-    rep.multiplier = this.multiplier;
+      return rep;
+    };
 
-    return rep;
-  };
-    
-  // End of ChainLink subclasses
+    return {
+      StaticChainLink: StaticChainLink,
+      MultiplierChainLink: MultiplierChainLink
+    };
+  })();
+
+  // End of util namespace
 
   /**
    * Creates a Chainable with the supplied name.
@@ -386,21 +408,21 @@ var d20pal = (function() {
   var Character = function(name) {
     this.name = name;
 
-    var defaultAbilityScore = new StaticChainLink('default ability score', 10);
-    var doubler = new MultiplierChainLink('doubler', 2);
+    var defaultAbilityScore = new util.StaticChainLink('default ability score', 10);
+    var doubler = new util.MultiplierChainLink('doubler', 2);
     var abilityModifier = new ChainLink('ability modifier', function(oldVal){return Math.floor(oldVal/2)-5;});
 
     var hp = new Chainable('hp');
-    hp.addLink(new StaticChainLink('default hp', 12), 0);
+    hp.addLink(new util.StaticChainLink('default hp', 12), 0);
     var ac = new Chainable('ac');
-    ac.addLink(new StaticChainLink('default ac', 12), 0);
+    ac.addLink(new util.StaticChainLink('default ac', 12), 0);
 
     var fortitude = new Chainable('fortitude');
-    fortitude.addLink(new StaticChainLink('default fortitude', 13));
+    fortitude.addLink(new util.StaticChainLink('default fortitude', 13));
     var reflex = new Chainable('reflex');
-    reflex.addLink(new StaticChainLink('default reflex', 13));
+    reflex.addLink(new util.StaticChainLink('default reflex', 13));
     var will = new Chainable('will');
-    will.addLink(new StaticChainLink('default will', 13));
+    will.addLink(new util.StaticChainLink('default will', 13));
 
     var strength         = new Chainable('strength');
     var strengthmod      = new Chainable('strength-modifier', strength);
@@ -497,6 +519,8 @@ var d20pal = (function() {
 
   // Exporting module's public fields
   return {
-    Character: Character
+    Character:  Character,
+    Chainable:  Chainable,
+    ChainLink:  ChainLink
   };
 })();
