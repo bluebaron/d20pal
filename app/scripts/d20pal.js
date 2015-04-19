@@ -258,9 +258,39 @@ var d20pal = (function() {
       return rep;
     };
 
+    function AdderChainLink(name, addend) {
+      var callback = null;
+      if (typeof addend === 'number') {
+        callback = function(oldVal) {
+          return oldVal + addend;
+        }
+      } else if (addend instanceof Chainable) {
+        callback = function(oldVal, params) {
+          return oldVal + addend.getFinal(params);
+        }
+      }
+
+      ChainLink.call(this, name, callback);
+      this.tag('adder');
+    }
+    AdderChainLink.prototype = Object.create(ChainLink.prototype);
+    AdderChainLink.prototype.constructor = AdderChainLink;
+    ChainLink.registerType('adder', AdderChainLink);
+
+    /*
+    AdderChainLink.fromRepresentation = function(rep) {
+      var addend = null;
+      if (typeof rep.addend === 'number') {
+        addend = rep.addend;
+      } else if (typeof rep.addend === 'string') {
+        addend = 
+      var achainlink = new AdderChainLink(rep.name
+    */
+
     return {
       StaticChainLink: StaticChainLink,
-      MultiplierChainLink: MultiplierChainLink
+      MultiplierChainLink: MultiplierChainLink,
+      AdderChainLink: AdderChainLink
     };
   })();
 
