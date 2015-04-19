@@ -112,17 +112,7 @@ var d20pal = (function() {
    */
   var ChainLink = function(name, modifierCallback) {
     this.name = name || 'chainlink';
-    //console.log('Instantiating ChainLink.');
-    if (typeof modifierCallback !== 'function') {
-      //console.log('Non-function modifierCallback.');
-      this.modifierCallback = function(oldVal) {
-        //console.log('ChainLink default non-function modifierCallback called; returning value ' + modifierCallback);
-        return modifierCallback; // actually returns the number
-      };
-    } else {
-      //console.log('Typical modifierCallback.');
-      this.modifierCallback = modifierCallback;
-    }
+    this.modifierCallback = modifierCallback || function(){return null;};
   };
 
   /**
@@ -258,15 +248,22 @@ var d20pal = (function() {
       return rep;
     };
 
-    function AdderChainLink(name, addend) {
+    function AdderChainLink(name, addend, character) {
       var callback = null;
-      if (typeof addend === 'number') {
+      if (typeof addend === 'number') { // Addend is just a number
         callback = function(oldVal) {
           return oldVal + addend;
         }
-      } else if (addend instanceof Chainable) {
+      } else if (typeof addend === 'string') { // Dynamic addend
+        var chain = character.getChainableByName(addend);
+        if (chain === null) {
+          throw new Exception(
+            'Could not find chainable "' + addend +
+            '" on character "' + character.getName() + '".');
+        }
+
         callback = function(oldVal, params) {
-          return oldVal + addend.getFinal(params);
+          return oldVal + chain.getFinal(params);
         }
       }
 
@@ -478,7 +475,7 @@ var d20pal = (function() {
     intelligencemod.addLink(abilityModifier, 0);
     wisdom.addLink(defaultAbilityScore, 0);
     wisdommod.addLink(abilityModifier, 0);
-    charisma.addLink(/*defaultAbilityScore*/new ChainLink('default charisma', 15), 0);
+    charisma.addLink(/*defaultAbilityScore*/new util.StaticChainLink('default charisma', 15), 0);
     charismamod.addLink(abilityModifier, 0);
 
     this.chainables = [
@@ -529,6 +526,11 @@ var d20pal = (function() {
     return JSON.stringify(obj);
   };
   
+  /**
+   * Creates a character from a JSON representation.
+   * @param {String} str - JSON string containing character information.
+   * @returns {Character} The character described by the JSON string.
+   */
   Character.fromString = function(str) {
     var obj = JSON.parse(str),
         character = new Character(obj.name);
@@ -542,6 +544,19 @@ var d20pal = (function() {
     return character;
   };
 
+  /**
+   * Gets a named Chainable owned by a character.
+   * @param {String} name - Name of Chainable sought.
+   * @returns {Chainable|null} Chainable if it was found, null otherwise.
+   */
+  Character.prototype.getChainableByName = function(name) {
+    for (var i = 0; i < this.chainables.length; i++) {
+      if (this.chainables[i].name === name) {
+        return this.chainables[i];
+      }
+    }
+  };
+
   // Make Characters taggable
   Character.prototype = extend(Character.prototype, Taggable);
 
@@ -551,6 +566,7 @@ var d20pal = (function() {
   return {
     Character:  Character,
     Chainable:  Chainable,
-    ChainLink:  ChainLink
+    ChainLink:  ChainLink,
+    util:       util
   };
 })();
