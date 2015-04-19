@@ -233,67 +233,75 @@ $charisma-color: #D4D46A;
 }
 
 #chainlinks {
+  $arrow-body-height: 30px;
+  $arrow-tip-height: 10px;
+  $arrow-width: 30px;
+  $arrow-color: #4f4;
+  $arrow-overlap: 0px;
+  $chain-link-height: 60px;
+  $chain-link-spacing: 30px;
+  $chain-link-padding: 10px;
+  $transition-timing-function-enter: ease-out;
+  $transition-timing-function-move: ease;
+  $transition-timing-function-leave: ease-out;
+  $stagger-delay: 0.1s;
+  @mixin animation-stagger($event) {
+    &.ng-stagger-#{$event} {
+      transition-delay: $stagger-delay;
+    }
+  }
+
   > ul {
     @include remove-list-styles;
-    $arrow-body-height: 30px;
-    $arrow-tip-height: 10px;
-    $arrow-width: 30px;
-    $arrow-color: #4f4;
-    $arrow-overlap: 0px;
-    $chain-link-height: 30px;
-    $chain-link-spacing: 30px;
-    $chain-link-padding: 10px;
 
     > li {
-      > .chainlinkcontainer {
-        @include clickable;
-        position: relative;
+      @include clickable;
+      position: relative;
+      display: block;
+      height: $chain-link-height;
+      background-color: #ccc;
+      padding: $chain-link-padding;
+      margin-bottom: $chain-link-spacing;
+      border-radius: 10px;
+
+      text-align: center;
+      font-weight: bold;
+      color: #fff;
+
+      > .chainlinkresult {
         display: block;
-        height: 60px;
-        background-color: #ccc;
-        padding: $chain-link-padding;
-        margin-bottom: $chain-link-spacing;
-        border-radius: 10px;
+        position: absolute;
+        bottom: $arrow-body-height * -1 + $arrow-overlap;
+        left: 50%;
+        width: $arrow-width;
+        height: $arrow-body-height;
+        margin-left: ($arrow-width/-2);
+        line-height: $arrow-body-height;
+        background-color: $arrow-color;
+        z-index: 10;
 
-        text-align: center;
-        font-weight: bold;
-        color: #fff;
-
-        > .chainlinkresult {
+        /* Lil triangles to make an arrow */
+        &::before {
+          content: ' ';
           display: block;
           position: absolute;
-          bottom: $arrow-body-height * -1 + $arrow-overlap;
-          left: 50%;
-          width: $arrow-width;
-          height: $arrow-body-height;
-          margin-left: ($arrow-width/-2);
-          line-height: $arrow-body-height;
-          background-color: $arrow-color;
-          z-index: 10;
-
-          /* Lil triangles to make an arrow */
-          &::before {
-            content: ' ';
-            display: block;
-            position: absolute;
-            bottom: 100%;
-            width: 0;
-            height: 0;
-            border-left: $arrow-width/2 solid $arrow-color;
-            border-right: $arrow-width/2 solid $arrow-color;
-            border-top: $arrow-tip-height solid transparent;
-          }
-          &::after {
-            content: ' ';
-            display: block;
-            position: absolute;
-            top: $arrow-body-height;
-            width: 0;
-            height: 0;
-            border-left: $arrow-width/2 solid transparent;
-            border-right: $arrow-width/2 solid transparent;
-            border-top: $arrow-tip-height solid $arrow-color;
-          }
+          bottom: 100%;
+          width: 0;
+          height: 0;
+          border-left: $arrow-width/2 solid $arrow-color;
+          border-right: $arrow-width/2 solid $arrow-color;
+          border-top: $arrow-tip-height solid transparent;
+        }
+        &::after {
+          content: ' ';
+          display: block;
+          position: absolute;
+          top: $arrow-body-height;
+          width: 0;
+          height: 0;
+          border-left: $arrow-width/2 solid transparent;
+          border-right: $arrow-width/2 solid transparent;
+          border-top: $arrow-tip-height solid $arrow-color;
         }
       }
       /* Animation for chainlinks */
@@ -302,39 +310,29 @@ $charisma-color: #D4D46A;
       $leave-duration: 1s;
 
       &.ng-enter {
-        transition: all $enter-duration ease-out;
+        transition: all $enter-duration $transition-timing-function-enter;
         height: 0px;
         padding-top: 0;
         padding-bottom: 0;
         margin-bottom: 0;
 
-        > .chainlinkresult {
-          display: none;
-        }
-
         &-active {
-          transition: all $enter-duration ease-out;
           height: $chain-link-height;
           padding-top: $chain-link-padding;
           padding-bottom: $chain-link-padding;
           margin-bottom: $chain-link-spacing;
         }
 
-        &-stagger {
-          transition-delay: 0.1s;
-        }
+        @include animation-stagger(enter);
       }
 
       &.ng-move {
-        transition: 0.3s ease all;
-
-        &-stagger {
-          transition-delay: 0.1s;
-        }
+        transition: 0.3s $transition-timing-function-move all;
+        @include animation-stagger(move);
       }
 
       &.ng-leave {
-        transition: $leave-duration ease all;
+        transition: $leave-duration $transition-timing-function-leave all;
         height: $chain-link-height;
         padding-top: $chain-link-padding;
         padding-bottom: $chain-link-padding;
@@ -351,9 +349,7 @@ $charisma-color: #D4D46A;
           margin-bottom: 0;
         }
 
-        &-stagger {
-          transition-delay: 0.1s;
-        }
+        @include animation-stagger(leave);
       }
     }
   }
