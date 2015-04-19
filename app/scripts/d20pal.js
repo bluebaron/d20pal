@@ -283,10 +283,40 @@ var d20pal = (function() {
       var achainlink = new AdderChainLink(rep.name
     */
 
+    /**
+     * Represents a set of dice as described by dicestr.
+     *
+     * @class
+     * @memberof module:d20pal.util
+     * @param {String} dicestr - String describing set of dice, in typical
+     * d20 notation.
+     */
+    function Dice(dicestr) {
+      this.dicestr = dicestr;
+    }
+
+    Dice.prototype.roll = function() {
+      var res = this.dicestr.match(/(\d*)d(\d+)((\+|-)(\d+))/);
+      if (res === null) {
+        return false;
+      }
+      var numdice = parseInt(res[1]);
+      var numsides = parseInt(res[2]);
+
+      var total = 0;
+      for (var i = 0; i < numdice; i++) {
+        var rolledvalue = Math.floor(Math.random() * numsides);
+        total += rolledvalue;
+      }
+
+      return total;
+    };
+
     return {
       StaticChainLink: StaticChainLink,
       MultiplierChainLink: MultiplierChainLink,
-      AdderChainLink: AdderChainLink
+      AdderChainLink: AdderChainLink,
+      Dice:           Dice
     };
   })();
 
