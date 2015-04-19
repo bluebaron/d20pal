@@ -158,13 +158,13 @@ var d20pal = (function() {
   ChainLink.fromRepresentation = function(rep) {
     var type = 'default';
     for (var i = 0; i < ChainLink.types.length; i++) {
-      if (ChainLink.types[tag] !== undefined) {
-        return ChainLink.types[tag].fromRepresentation(rep);
+      if (ChainLink.types[i] !== undefined) {
+        return ChainLink.types[i].fromRepresentation(rep);
       }
-    };
+    }
 
     var chainlink = new ChainLink(rep.name);
-    rep.tags.forEach(function(tag){chainlink.tag(tag)});
+    rep.tags.forEach(function(tag){chainlink.tag(tag);});
     return chainlink;
   };
 
@@ -253,18 +253,17 @@ var d20pal = (function() {
       if (typeof addend === 'number') { // Addend is just a number
         callback = function(oldVal) {
           return oldVal + addend;
-        }
+        };
       } else if (typeof addend === 'string') { // Dynamic addend
         var chain = character.getChainableByName(addend);
         if (chain === null) {
-          throw new Exception(
-            'Could not find chainable "' + addend +
-            '" on character "' + character.getName() + '".');
+          throw 'Could not find chainable "' + addend + '" on character "' +
+                character.getName() + '".';
         }
 
         callback = function(oldVal, params) {
           return oldVal + chain.getFinal(params);
-        }
+        };
       }
 
       ChainLink.call(this, name, callback);
@@ -434,60 +433,6 @@ var d20pal = (function() {
    */
   var Character = function(name) {
     this.name = name;
-
-    var defaultAbilityScore = new util.StaticChainLink('default ability score', 10);
-    var doubler = new util.MultiplierChainLink('doubler', 2);
-    var abilityModifier = new ChainLink('ability modifier', function(oldVal){return Math.floor(oldVal/2)-5;});
-
-    var hp = new Chainable('hp');
-    hp.addLink(new util.StaticChainLink('default hp', 12), 0);
-    var ac = new Chainable('ac');
-    ac.addLink(new util.StaticChainLink('default ac', 12), 0);
-
-    var fortitude = new Chainable('fortitude');
-    fortitude.addLink(new util.StaticChainLink('default fortitude', 13));
-    var reflex = new Chainable('reflex');
-    reflex.addLink(new util.StaticChainLink('default reflex', 13));
-    var will = new Chainable('will');
-    will.addLink(new util.StaticChainLink('default will', 13));
-
-    var strength         = new Chainable('strength');
-    var strengthmod      = new Chainable('strength-modifier', strength);
-    var dexterity        = new Chainable('dexterity');
-    var dexteritymod     = new Chainable('dexterity-modifier', dexterity);
-    var constitution     = new Chainable('constitution');
-    var constitutionmod  = new Chainable('constitution-modifier', constitution);
-    var intelligence     = new Chainable('intelligence');
-    var intelligencemod  = new Chainable('intelligence-modifier', intelligence);
-    var wisdom           = new Chainable('wisdom');
-    var wisdommod        = new Chainable('wisdom-modifier', wisdom);
-    var charisma         = new Chainable('charisma');
-    var charismamod      = new Chainable('charisma-modifier', charisma);
-    charismamod.addLink(doubler, 200); // TODO: remove, this is only for testing
-
-    strength.addLink(defaultAbilityScore, 0);
-    strengthmod.addLink(abilityModifier, 0);
-    dexterity.addLink(defaultAbilityScore, 0);
-    dexteritymod.addLink(abilityModifier, 0);
-    constitution.addLink(defaultAbilityScore, 0);
-    constitutionmod.addLink(abilityModifier, 0);
-    intelligence.addLink(defaultAbilityScore, 0);
-    intelligencemod.addLink(abilityModifier, 0);
-    wisdom.addLink(defaultAbilityScore, 0);
-    wisdommod.addLink(abilityModifier, 0);
-    charisma.addLink(/*defaultAbilityScore*/new util.StaticChainLink('default charisma', 15), 0);
-    charismamod.addLink(abilityModifier, 0);
-
-    this.chainables = [
-      hp, ac,
-      strength, strengthmod,
-      dexterity, dexteritymod,
-      constitution, constitutionmod,
-      intelligence, intelligencemod,
-      wisdom, wisdommod,
-      charisma, charismamod,
-      fortitude, reflex, will
-    ];
   };
 
   /**
@@ -562,11 +507,83 @@ var d20pal = (function() {
 
   // End of Character class
 
+  /**
+   * Namespace for all classes related to DnD 3.5.
+   * @namespace
+   * @memberof module:d20pal
+   */
+  var dnd35 = (function() {
+    function DND35Character(name) {
+      Character.call(this, name);
+
+      var defaultAbilityScore = new util.StaticChainLink('default ability score', 10);
+      var doubler = new util.MultiplierChainLink('doubler', 2);
+      var abilityModifier = new ChainLink('ability modifier', function(oldVal){return Math.floor(oldVal/2)-5;});
+
+      var hp = new Chainable('hp');
+      hp.addLink(new util.StaticChainLink('default hp', 12), 0);
+      var ac = new Chainable('ac');
+      ac.addLink(new util.StaticChainLink('default ac', 12), 0);
+
+      var fortitude = new Chainable('fortitude');
+      fortitude.addLink(new util.StaticChainLink('default fortitude', 13));
+      var reflex = new Chainable('reflex');
+      reflex.addLink(new util.StaticChainLink('default reflex', 13));
+      var will = new Chainable('will');
+      will.addLink(new util.StaticChainLink('default will', 13));
+
+      var strength         = new Chainable('strength');
+      var strengthmod      = new Chainable('strength-modifier', strength);
+      var dexterity        = new Chainable('dexterity');
+      var dexteritymod     = new Chainable('dexterity-modifier', dexterity);
+      var constitution     = new Chainable('constitution');
+      var constitutionmod  = new Chainable('constitution-modifier', constitution);
+      var intelligence     = new Chainable('intelligence');
+      var intelligencemod  = new Chainable('intelligence-modifier', intelligence);
+      var wisdom           = new Chainable('wisdom');
+      var wisdommod        = new Chainable('wisdom-modifier', wisdom);
+      var charisma         = new Chainable('charisma');
+      var charismamod      = new Chainable('charisma-modifier', charisma);
+      charismamod.addLink(doubler, 200); // TODO: remove, this is only for testing
+
+      strength.addLink(defaultAbilityScore, 0);
+      strengthmod.addLink(abilityModifier, 0);
+      dexterity.addLink(defaultAbilityScore, 0);
+      dexteritymod.addLink(abilityModifier, 0);
+      constitution.addLink(defaultAbilityScore, 0);
+      constitutionmod.addLink(abilityModifier, 0);
+      intelligence.addLink(defaultAbilityScore, 0);
+      intelligencemod.addLink(abilityModifier, 0);
+      wisdom.addLink(defaultAbilityScore, 0);
+      wisdommod.addLink(abilityModifier, 0);
+      charisma.addLink(/*defaultAbilityScore*/new util.StaticChainLink('default charisma', 15), 0);
+      charismamod.addLink(abilityModifier, 0);
+
+      this.chainables = [
+        hp, ac,
+        strength, strengthmod,
+        dexterity, dexteritymod,
+        constitution, constitutionmod,
+        intelligence, intelligencemod,
+        wisdom, wisdommod,
+        charisma, charismamod,
+        fortitude, reflex, will
+      ];
+    }
+    DND35Character.prototype = Object.create(Character.prototype);
+    DND35Character.prototype.constructor = DND35Character;
+
+    return {
+      DND35Character: DND35Character
+    };
+  })();
+
   // Exporting module's public fields
   return {
     Character:  Character,
     Chainable:  Chainable,
     ChainLink:  ChainLink,
-    util:       util
+    util:       util,
+    dnd35:      dnd35
   };
 })();

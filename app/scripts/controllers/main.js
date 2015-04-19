@@ -10,7 +10,7 @@
 /* global d20pal: false */
 angular.module('d20palApp')
   .controller('MainCtrl', function ($scope) {
-    var joe = new d20pal.Character('Joe');
+    var joe = new d20pal.dnd35.DND35Character('Joe');
     window.joe = joe;
     $scope.characters = [joe];
     $scope.selectedCharacter = null;
