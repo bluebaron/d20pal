@@ -191,6 +191,39 @@ var d20pal = (function() {
    */
   var util = (function() {
     /**
+     * Represents a set of dice as described by dicestr.
+     *
+     * @class
+     * @memberof module:d20pal.util
+     * @param {String} dicestr - String describing set of dice, in typical
+     * d20 notation.
+     */
+    function Dice(dicestr) {
+      this.dicestr = dicestr;
+    }
+
+    Dice.prototype.roll = function() {
+      var res = this.dicestr.match(/(\d*)d(\d+)((\+|-)(\d+))?/);
+      if (res === null) {
+        return false;
+      }
+      var numdice   = parseInt(res[1]),
+          numsides  = parseInt(res[2]),
+          addend    = parseInt(res[3]);
+      if (!(numdice && numsides && addend)) {
+        return false;
+      }
+
+      var total = 0;
+      for (var i = 0; i < numdice; i++) {
+        var rolledvalue = Math.floor(Math.random() * numsides);
+        total += rolledvalue;
+      }
+
+      return total;
+    };
+
+    /**
      * StaticChainLinks will output only one value, given at its creation.
      * @class
      * @extends module:d20pal.ChainLink
@@ -249,11 +282,14 @@ var d20pal = (function() {
     };
 
     function AdderChainLink(name, addend, character) {
+      this.addend = addend;
+      this.character = character;
       var callback = null;
       if (typeof addend === 'number') { // Addend is just a number
         callback = function(oldVal) {
           return oldVal + addend;
         };
+        this.tag('static-adder');
       } else if (typeof addend === 'string') { // Dynamic addend
         var chain = character.getChainableByName(addend);
         if (chain === null) {
@@ -264,6 +300,7 @@ var d20pal = (function() {
         callback = function(oldVal, params) {
           return oldVal + chain.getFinal(params);
         };
+        this.tag('dynamic-adder');
       }
 
       ChainLink.call(this, name, callback);
@@ -273,50 +310,37 @@ var d20pal = (function() {
     AdderChainLink.prototype.constructor = AdderChainLink;
     ChainLink.registerType('adder', AdderChainLink);
 
-    /*
-    AdderChainLink.fromRepresentation = function(rep) {
+    AdderChainLink.prototype.getRepresentation = function() {
+      var rep = ChainLink.prototype.getRepresentation.call(this);
+      if (this.isTagged('dynamic-adder')) {
+        rep.type = 'dynamic';
+        rep.addend = this.addend.name;
+      } else {
+        rep.type = 'static';
+        rep.addend = this.addend;
+      }
+    };
+
+    AdderChainLink.fromRepresentation = function(rep, character) {
       var addend = null;
-      if (typeof rep.addend === 'number') {
+      if (rep.type === 'static') {
         addend = rep.addend;
-      } else if (typeof rep.addend === 'string') {
-        addend = 
-      var achainlink = new AdderChainLink(rep.name
-    */
-
-    /**
-     * Represents a set of dice as described by dicestr.
-     *
-     * @class
-     * @memberof module:d20pal.util
-     * @param {String} dicestr - String describing set of dice, in typical
-     * d20 notation.
-     */
-    function Dice(dicestr) {
-      this.dicestr = dicestr;
-    }
-
-    Dice.prototype.roll = function() {
-      var res = this.dicestr.match(/(\d*)d(\d+)((\+|-)(\d+))/);
-      if (res === null) {
-        return false;
-      }
-      var numdice = parseInt(res[1]);
-      var numsides = parseInt(res[2]);
-
-      var total = 0;
-      for (var i = 0; i < numdice; i++) {
-        var rolledvalue = Math.floor(Math.random() * numsides);
-        total += rolledvalue;
+      } else if (rep.type === 'dynamic') {
+        addend = character.getChainableByName(rep.addend);
       }
 
-      return total;
+      if (!addend) {
+        return null;
+      }
+
+      return new AdderChainLink(rep.name, addend, character);
     };
 
     return {
-      StaticChainLink: StaticChainLink,
-      MultiplierChainLink: MultiplierChainLink,
-      AdderChainLink: AdderChainLink,
-      Dice:           Dice
+      StaticChainLink:      StaticChainLink,
+      MultiplierChainLink:  MultiplierChainLink,
+      AdderChainLink:       AdderChainLink,
+      Dice:                 Dice
     };
   })();
 
