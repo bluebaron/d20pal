@@ -28,7 +28,7 @@
         {{selectedChainable.startChain.name}}
         <span class="chainlinkresult">{{selectedChainable.startChain.getFinal()}}</span>
       </li>
-      <li ng-repeat="tuple in selectedChainable.lppeTuples track by tuple[1]">
+      <li ng-repeat="tuple in selectedChainable.lppeTuples">
         {{tuple[0].name}}
         <span class="chainlinkresult">{{tuple[3]}}</span>
       </li>

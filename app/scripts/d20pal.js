@@ -401,18 +401,29 @@ var d20pal = (function() {
    * @return {ChainLink} The new link.
    */
   Chainable.prototype.addLink = function(newLink, priority) {
-    //console.log('Adding link to Chainable "' + this.name + '"');
+    console.log('Adding link to Chainable "' + this.name + '"');
     if (priority === undefined) {
       priority = this.nextLowestPriorityRank();
-      this.lppeTuples[this.lppeTuples.length] = [newLink, priority, null];
+      this.lppeTuples.push([newLink, priority, null]);
     } else {
+      if (this.lppeTuples.length === 0) {
+        this.lppeTuples.push([newLink, priority, null]);
+      }
+
       for (var i = 0; i < this.lppeTuples.length; i++) {
         if (priority > this.lppeTuples[i][1]) {
           continue;
-        } else if (priority < this.lppetuples[i][1]) {
-          this.lppetuples.splice(i, 0, [newLink, priority, null]);
-        } else if (this.lppetuples[i][1] === priority - 1
-        // TODO: fix this function fps
+        } else if (priority < this.lppeTuples[i][1]) {
+          this.lppeTuples.splice(i, 0, [newLink, priority, null]);
+        } else {
+          var j = i;
+          while (this.lppeTuples[j][1] === priority - 1) {
+            priority -= 1;
+            j -= 1;
+          }
+        }
+      }
+    }
 
     this.getFinal();
 
