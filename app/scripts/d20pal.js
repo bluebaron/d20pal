@@ -216,8 +216,8 @@ var d20pal = (function() {
       }
       var numdice   = parseInt(res[1]),
           numsides  = parseInt(res[2]),
-          addend    = parseInt(res[3]);
-      if (!(numdice && numsides && addend)) {
+          addend    = res[3]?parseInt(res[3]):null;
+      if (!(numdice && numsides)) {
         return false;
       }
 
@@ -225,6 +225,10 @@ var d20pal = (function() {
       for (var i = 0; i < numdice; i++) {
         var rolledvalue = Math.floor(Math.random() * numsides);
         total += rolledvalue;
+      }
+
+      if (addend) {
+        total += addend;
       }
 
       return total;
@@ -384,7 +388,7 @@ var d20pal = (function() {
     if (this.lppeTuples.length === 0) {
       return Chainable.priorityRankIncrement;
     } else {
-      var lowest = this.lppeTuples[this.lppeTuples.length-1][0],
+      var lowest = this.lppeTuples[this.lppeTuples.length-1][1],
           incr = Chainable.priorityRankIncrement,
           nextLowestRank = lowest - (lowest % incr) + incr;
 
@@ -401,7 +405,6 @@ var d20pal = (function() {
    * @return {ChainLink} The new link.
    */
   Chainable.prototype.addLink = function(newLink, priority) {
-    console.log('Adding link to Chainable "' + this.name + '"');
     if (priority === undefined) {
       priority = this.nextLowestPriorityRank();
       this.lppeTuples.push([newLink, priority, null]);
@@ -615,8 +618,8 @@ var d20pal = (function() {
 
       var hp = new Chainable('hp');
       var ac = new Chainable('ac');
-      hp.addLink(new util.StaticChainLink('default hp', 12), 0);
-      ac.addLink(new util.StaticChainLink('default ac', 12), 0);
+      hp.addLink(new util.StaticChainLink('default hp', 12));
+      ac.addLink(new util.StaticChainLink('default ac', 12));
 
       var fortitude = new Chainable('fortitude');
       var reflex = new Chainable('reflex');
@@ -643,18 +646,18 @@ var d20pal = (function() {
           defaultAbilityScore = new util.StaticChainLink('default ability score', 10),
           doubler = new util.MultiplierChainLink('doubler', 2);
 
-      strength.addLink(defaultAbilityScore, 0);
-      strengthmod.addLink(abilityModifier, 0);
-      dexterity.addLink(defaultAbilityScore, 0);
-      dexteritymod.addLink(abilityModifier, 0);
-      constitution.addLink(defaultAbilityScore, 0);
-      constitutionmod.addLink(abilityModifier, 0);
-      intelligence.addLink(defaultAbilityScore, 0);
-      intelligencemod.addLink(abilityModifier, 0);
-      wisdom.addLink(defaultAbilityScore, 0);
-      wisdommod.addLink(abilityModifier, 0);
-      charisma.addLink(/*defaultAbilityScore*/new util.StaticChainLink('default charisma', 15), 0);
-      charismamod.addLink(abilityModifier, 0);
+      strength.addLink(defaultAbilityScore);
+      strengthmod.addLink(abilityModifier);
+      dexterity.addLink(defaultAbilityScore);
+      dexteritymod.addLink(abilityModifier);
+      constitution.addLink(defaultAbilityScore);
+      constitutionmod.addLink(abilityModifier);
+      intelligence.addLink(defaultAbilityScore);
+      intelligencemod.addLink(abilityModifier);
+      wisdom.addLink(defaultAbilityScore);
+      wisdommod.addLink(abilityModifier);
+      charisma.addLink(/*defaultAbilityScore*/new util.StaticChainLink('default charisma', 15));
+      charismamod.addLink(abilityModifier);
       charismamod.addLink(doubler, 200); // TODO: remove, this is only for testing
 
       var initiative = new Chainable('initiative', dexterity);
