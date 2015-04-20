@@ -10,15 +10,17 @@
         <div ng-class="{'selected-character': character.selected}" ng-click="selectCharacter($index)">{{character.name}}</div>
       </li>
     </ul>
-    <ul id="infopanel">
-      <li
-        ng-repeat="chainable in selectedCharacter.chainables"
-        ng-click="selectChainable($index)"
-        class="{{getApplicableClasses(chainable.name)}}">
-        <span class="stat-abbr" ng-if="getAbbreviation(chainable.name) !== null">{{getAbbreviation(chainable.name)}}</span>
-        {{chainable.getFinal()}}
-      </li>
-    </ul>
+    <table id="infopanel">
+      <tr ng-repeat="row in statRows">
+        <td
+          ng-repeat="chainable in row"
+          ng-click="selectChainable(chainable.name)"
+          class="{{getApplicableClasses(chainable.name)}}">
+          {{chainable.getFinal()}}
+          <span class="chainable-name" ng-if="getAbbreviation(chainable.name) !== null">{{getAbbreviation(chainable.name)}}</span>
+        </td>
+      </tr>
+    </table>
   </div>
   <div class="col-sm-3" id="chainlinks">
     <ul>

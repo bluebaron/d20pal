@@ -50,13 +50,6 @@ body {
   }
 }
 
-$strength-color: #D46A6A; 
-$dexterity-color: #55AA55;
-$constitution-color: #D49A6A;
-$intelligence-color: #4F628E;
-$wisdom-color: #764B8E;
-$charisma-color: #D4D46A;
-
 @mixin remove-list-styles {
   padding-left: 0;
   list-style-type: none;
@@ -68,8 +61,6 @@ $charisma-color: #D4D46A;
 
 /* Character list */
 #characterlist {
-  overflow-x: hidden;
-
   > ul {
     @include remove-list-styles;
 
@@ -83,112 +74,122 @@ $charisma-color: #D4D46A;
 }
 
 /* Ability and ability modifier styling */
-@mixin abbreviation-underlay($abbr) {
-  content: $abbr;
-  position: absolute;
-  display: block;
-  width: 100%;
-  z-index: -1;
-  text-align: center;
-  font-weight: normal;
-  color: #fff;
-  opacity: 0.5;
+$ability-names: (
+  strength,
+  dexterity,
+  constitution,
+  intelligence,
+  wisdom,
+  charisma
+);
+
+$ability-colors: (
+  strength: #D46A6A,
+  dexterity: #55AA55,
+  constitution: #D49A6A,
+  intelligence: #4F628E,
+  wisdom: #764B8E,
+  charisma: #D4D46A
+);
+
+@mixin ability-backgrounds($color) {
+  background-color: $color;
+  
+  &-modifier {
+    background-color: lighten($color, 20);
+  }
 }
 
 #infopanel {
-  &::after {
-    content: '';
-    display: table;
-    clear: both;
-  }
+  $table-border: 1px solid #000;
 
-  list-style-type: none;
-  padding-left: 0;
+  width: 100%;
 
-  > li {
-    @include clickable;
-    width: 100%;
-    height: 30px;
-    box-sizing: border-box;
-    border-bottom: 1px solid #fff;
-    border-right: 1px solid #fff;
-    position: relative;
-    z-index: 10;
-    color: #111;
-
-    line-height: 30px;
-    font-size: 30px;
-    text-align: center;
-    font-weight: bold;
-    float: left;
-    padding-left: 50%;
-
-    > .stat-abbr {
-      display: block;
-      width: 50%;
-      right: 50%;
-      position: absolute;
-      z-index: -1;
-      font-weight: normal;
-    }
-
-    &.hp {
-      text-align: center;
-      color: red;
-
-      > .stat-abbr {
+  > tbody {
+    > tr {
+      > td {
         width: 50%;
-        right: 50%;
-        color: lighten(#000, 15);
-      }
-    }
+        height: 30px;
+        color: #111;
 
-    &.ability {
-      width: 50%;
-      padding: 0;
+        border: $table-border;
 
-      @mixin ability-colors($color) {
-        background-color: $color;
+        line-height: 20px;
+        font-size: 20px;
+        text-align: center;
+        font-weight: bold;
+
+        @include clickable;
         
-        &-modifier {
-          background-color: lighten($color, 20);
+        > .chainable-name {
+          display: block;
+          width: 100%;
+
+          border-top: $table-border;
+
+          font-family: 'Arial Black', sans;
+          font-weight: bold;
+          font-size: 10px;
+          line-height: 10px;
         }
 
-        > .stat-abbr {
-          color: darken($color, 15);
+        &:first-of-type {
+          border-left: none;
+        }
+
+        &:last-of-type {
+          border-right: none;
+        }
+
+        &.hp {
+          color: #f00;
+        }
+
+        @each $name in $ability-names {
+          &.#{$name} {
+            background-color: map-get($ability-colors, $name);
+            border: $table-border;
+
+            font-size: 30px;
+            line-height: 30px;
+
+            &-modifier {
+              background-color: lighten(map-get($ability-colors, $name), 20);
+
+              font-size: 30px;
+              line-height: 30px;
+
+              > .chainable-name {
+                display: none;
+              }
+            }
+
+            > .chainable-name {
+              display: block;
+              width: 16px;
+              height: 30px;
+              padding-left: 3px;
+              padding-right: 3px;
+              float: left;
+
+              border-top: none;
+              border-right: $table-border;
+
+              word-wrap: break-word;
+              text-align: center;
+            }
+          }
         }
       }
-      
-      > .stat-abbr {
-        right: 0;
-        width: 100%;
+
+      &:first-of-type > td {
+        border-top: none;
       }
 
-      &-strength {
-        @include ability-colors($strength-color);
-      }
-
-      &-dexterity {
-        @include ability-colors($dexterity-color);
-      }
-
-      &-constitution {
-        @include ability-colors($constitution-color); 
-      }
-
-      &-intelligence {
-        @include ability-colors($intelligence-color); 
-      }
-
-      &-wisdom {
-        @include ability-colors($wisdom-color); 
-      }
-
-      &-charisma {
-        @include ability-colors($charisma-color); 
+      &:last-of-type > td {
+        border-bottom: none;
       }
     }
-
   }
 }
 

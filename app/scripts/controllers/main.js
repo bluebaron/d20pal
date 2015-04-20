@@ -28,6 +28,24 @@ angular.module('d20palApp')
       }
     };
 
+    $scope.statRows = [];
+    var defaultStatDisplayTemplate = [
+      ['hp', 'ac'],
+      ['strength', 'strength-modifier'],
+      ['dexterity', 'dexterity-modifier'],
+      ['constitution', 'constitution-modifier'],
+      ['intelligence', 'intelligence-modifier'],
+      ['wisdom', 'wisdom-modifier'],
+      ['charisma', 'charisma-modifier']
+    ];
+    function setStatRows(character) {
+      $scope.statRows = defaultStatDisplayTemplate.map(function(row) {
+        return row.map(function(cell) {
+          return character.getChainableByName(cell);
+        });
+      });
+    }
+
     // Selects character and highlights appropriately
     $scope.selectCharacter = function(characterIndex) {
       var character = $scope.characters[characterIndex];
@@ -41,16 +59,17 @@ angular.module('d20palApp')
       setCharacterHighlighted($scope.selectedCharacter, false);
       $scope.selectedCharacter = character;
       setCharacterHighlighted(character, true);
+      setStatRows(character);
     };
 
     $scope.selectCharacter(0);
 
-    $scope.selectChainable = function(index) {
-      $scope.selectedChainable = $scope.selectedCharacter.chainables[index];
+    $scope.selectChainable = function(name) {
+      $scope.selectedChainable = $scope.selectedCharacter.getChainableByName(name);
       $scope.selectedChainableIntermediaries = $scope.selectedChainable.getIntermediaries();
     };
 
-    $scope.selectChainable(0);
+    $scope.selectChainable('hp');
 
     // Finds appropriate classes for stat fields based on name of chainable
     $scope.getApplicableClasses = function(name) {
@@ -69,9 +88,6 @@ angular.module('d20palApp')
         case 'intelligence-modifier':
         case 'wisdom-modifier':
         case 'charisma-modifier':
-          applicableClasses.push('ability');
-          applicableClasses.push('ability-' + name);
-          break;
         case 'fortitude':
         case 'reflex':
         case 'will':
