@@ -95,8 +95,8 @@ var d20pal = (function() {
     };
 
     return {
-      tag: tag,
-      isTagged: isTagged
+      tag:          tag,
+      isTagged:     isTagged
     };
   })(); // end of Taggable definition
 
@@ -147,24 +147,31 @@ var d20pal = (function() {
     return obj;
   };
 
-  ChainLink.registerType = function(type, constructor) {
+  ChainLink.registerType = function(name, $constructor) {
     if (ChainLink.types === undefined) {
-      ChainLink.types = {};
+      ChainLink.types = [];
     }
 
-    ChainLink.types[type] = constructor;
+    ChainLink.types.push({
+      name: name,
+      $constructor: $constructor
+    });
   };
 
-  ChainLink.fromRepresentation = function(rep) {
-    var type = 'default';
-    for (var i = 0; i < ChainLink.types.length; i++) {
-      if (ChainLink.types[i] !== undefined) {
-        return ChainLink.types[i].fromRepresentation(rep);
-      }
+  ChainLink.fromRepresentation = function(rep, character) {
+    var type = 'default',
+        res = ChainLink.types.filter(function(type) {
+          return rep.tags.indexOf(type.name) !== -1;
+        }),
+        chainlink = null;
+    if (res.length > 0) {
+      chainlink = res[0].$constructor.fromRepresentation(rep, character);
+    } else {
+      chainlink = new ChainLink(rep.name);
     }
 
-    var chainlink = new ChainLink(rep.name);
-    rep.tags.forEach(function(tag){chainlink.tag(tag);});
+    chainlink.tag(rep.tags);
+
     return chainlink;
   };
 
@@ -230,6 +237,7 @@ var d20pal = (function() {
      * @memberof module:d20pal.util
      */
     function StaticChainLink(name, value) {
+      this.value = value;
       var callback = function(){return value;};
       ChainLink.call(this, name, callback);
       this.tag('static');
@@ -457,18 +465,29 @@ var d20pal = (function() {
 
     var obj = {
       name: this.name,
-      startChain: this.startChain,
       chainlinks: chainlinks
     };
+
+    if (this.startChain) {
+      obj.startChain = this.startChain.name;
+    }
 
     return obj;
   };
 
-  Chainable.fromRepresentation = function(rep) {
-    // TODO: add support for startchains in serialization
-    var chain = new Chainable(rep.name);
+  Chainable.fromRepresentation = function(rep, character) {
+    var startChain = null,
+        chain = null;
+
+    if (rep.startChain) {
+      startChain = character.getChainableByName(rep.startChain);
+      chain = new Chainable(rep.name, startChain);
+    } else {
+      chain = new Chainable(rep.name);
+    }
+
     rep.chainlinks.forEach(function(linkRep) {
-      var chainlink = ChainLink.fromRepresentation(linkRep);
+      var chainlink = ChainLink.fromRepresentation(linkRep, character);
       chain.addLink(chainlink, linkRep.priority);
     });
 
@@ -536,9 +555,10 @@ var d20pal = (function() {
 
     character.tags = [];
     character.tag(obj.tags);
-    character.chainables = obj.chainables.map(function(chainableRep) {
-      return Chainable.fromRepresentation(chainableRep);
-    });
+    character.chainables = [];
+    for (var i = 0; i < obj.chainables.length; i++) {
+      character.chainables.push(Chainable.fromRepresentation(obj.chainables[i], character));
+    }
 
     return character;
   };
@@ -567,12 +587,32 @@ var d20pal = (function() {
    * @memberof module:d20pal
    */
   var dnd35 = (function() {
+    /**
+     * A chain link that accepts an ability score and outputs its
+     * corresponding ability modifier.
+     * @class
+     * @extends module:d20pal.Chainable
+     */
+    function AbilityModifierChainLink() {
+      var name = 'ability modifier',
+          callback = function(oldVal) {
+            return Math.floor(oldVal/2)-5;
+          };
+
+      ChainLink.call(this, name, callback);
+      this.tag('ability-modifier');
+    }
+    AbilityModifierChainLink.prototype = Object.create(ChainLink.prototype);
+    AbilityModifierChainLink.prototype.constructor = AbilityModifierChainLink;
+    ChainLink.registerType('ability-modifier', AbilityModifierChainLink);
+
+    AbilityModifierChainLink.fromRepresentation = function(rep) {
+      var link = new AbilityModifierChainLink();
+      return link;
+    };
+
     function DND35Character(name) {
       Character.call(this, name);
-
-      var defaultAbilityScore = new util.StaticChainLink('default ability score', 10);
-      var doubler = new util.MultiplierChainLink('doubler', 2);
-      var abilityModifier = new ChainLink('ability modifier', function(oldVal){return Math.floor(oldVal/2)-5;});
 
       var hp = new Chainable('hp');
       hp.addLink(new util.StaticChainLink('default hp', 12), 0);
@@ -598,7 +638,10 @@ var d20pal = (function() {
       var wisdommod        = new Chainable('wisdom-modifier', wisdom);
       var charisma         = new Chainable('charisma');
       var charismamod      = new Chainable('charisma-modifier', charisma);
-      charismamod.addLink(doubler, 200); // TODO: remove, this is only for testing
+
+      var abilityModifier = new AbilityModifierChainLink(),
+          defaultAbilityScore = new util.StaticChainLink('default ability score', 10),
+          doubler = new util.MultiplierChainLink('doubler', 2);
 
       strength.addLink(defaultAbilityScore, 0);
       strengthmod.addLink(abilityModifier, 0);
@@ -612,6 +655,7 @@ var d20pal = (function() {
       wisdommod.addLink(abilityModifier, 0);
       charisma.addLink(/*defaultAbilityScore*/new util.StaticChainLink('default charisma', 15), 0);
       charismamod.addLink(abilityModifier, 0);
+      charismamod.addLink(doubler, 200); // TODO: remove, this is only for testing
 
       this.chainables = [
         hp, ac,
@@ -628,7 +672,8 @@ var d20pal = (function() {
     DND35Character.prototype.constructor = DND35Character;
 
     return {
-      DND35Character: DND35Character
+      DND35Character: DND35Character,
+      AbilityModifierChainLink: AbilityModifierChainLink
     };
   })();
 
