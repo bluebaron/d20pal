@@ -267,6 +267,7 @@ var d20pal = (function() {
      * @extends ChainLink
      */
     function MultiplierChainLink(name, multiplier) {
+      this.multiplier = multiplier;
       var callback = function(oldVal){return oldVal*multiplier;};
       ChainLink.call(this, name, callback);
       this.tag('multiplier');
@@ -615,15 +616,16 @@ var d20pal = (function() {
       Character.call(this, name);
 
       var hp = new Chainable('hp');
-      hp.addLink(new util.StaticChainLink('default hp', 12), 0);
       var ac = new Chainable('ac');
+      hp.addLink(new util.StaticChainLink('default hp', 12), 0);
       ac.addLink(new util.StaticChainLink('default ac', 12), 0);
 
       var fortitude = new Chainable('fortitude');
-      fortitude.addLink(new util.StaticChainLink('default fortitude', 13));
       var reflex = new Chainable('reflex');
-      reflex.addLink(new util.StaticChainLink('default reflex', 13));
       var will = new Chainable('will');
+
+      fortitude.addLink(new util.StaticChainLink('default fortitude', 13));
+      reflex.addLink(new util.StaticChainLink('default reflex', 13));
       will.addLink(new util.StaticChainLink('default will', 13));
 
       var strength         = new Chainable('strength');
@@ -657,8 +659,10 @@ var d20pal = (function() {
       charismamod.addLink(abilityModifier, 0);
       charismamod.addLink(doubler, 200); // TODO: remove, this is only for testing
 
+      var initiative = new Chainable('initiative', dexterity);
+
       this.chainables = [
-        hp, ac,
+        hp, ac, initiative,
         strength, strengthmod,
         dexterity, dexteritymod,
         constitution, constitutionmod,

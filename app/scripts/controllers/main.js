@@ -30,13 +30,12 @@ angular.module('d20palApp')
 
     $scope.statRows = [];
     var defaultStatDisplayTemplate = [
-      ['hp', 'ac'],
-      ['strength', 'strength-modifier'],
-      ['dexterity', 'dexterity-modifier'],
-      ['constitution', 'constitution-modifier'],
-      ['intelligence', 'intelligence-modifier'],
-      ['wisdom', 'wisdom-modifier'],
-      ['charisma', 'charisma-modifier']
+      ['hp', 'strength', 'strength-modifier'],
+      ['ac', 'dexterity', 'dexterity-modifier'],
+      ['initiative', 'constitution', 'constitution-modifier'],
+      ['fortitude', 'intelligence', 'intelligence-modifier'],
+      ['reflex', 'wisdom', 'wisdom-modifier'],
+      ['will', 'charisma', 'charisma-modifier']
     ];
     function setStatRows(character) {
       $scope.statRows = defaultStatDisplayTemplate.map(function(row) {
@@ -71,23 +70,39 @@ angular.module('d20palApp')
 
     $scope.selectChainable('hp');
 
+    function getRating(modifier) {
+      var rating = '';
+      if (modifier > 0) {
+        rating = 'good';
+      } else if (modifier > 5) {
+        rating = 'better';
+      } else if (modifier > 10) {
+        rating = 'great';
+      } else if (modifier > 15) {
+        rating = 'awesome';
+      }
+
+      return rating;
+    }
+
     // Finds appropriate classes for stat fields based on name of chainable
     $scope.getApplicableClasses = function(name) {
       var applicableClasses = [];
 
       switch(name) {
-        case 'strength':
-        case 'dexterity':
-        case 'constitution':
-        case 'intelligence':
-        case 'wisdom':
-        case 'charisma':
         case 'strength-modifier':
         case 'dexterity-modifier':
         case 'constitution-modifier':
         case 'intelligence-modifier':
         case 'wisdom-modifier':
         case 'charisma-modifier':
+          applicableClasses.push(getRating($scope.selectedCharacter.getChainableByName(name).getFinal()));
+        case 'strength':
+        case 'dexterity':
+        case 'constitution':
+        case 'intelligence':
+        case 'wisdom':
+        case 'charisma':
         case 'fortitude':
         case 'reflex':
         case 'will':
@@ -124,6 +139,7 @@ angular.module('d20palApp')
             return chain.name.substr(0,3).toUpperCase();
           case 'fortitude':
           case 'will':
+          case 'initiative':
             return chain.name.substr(0,4).toUpperCase();
           case 'hp':
           case 'ac': 
