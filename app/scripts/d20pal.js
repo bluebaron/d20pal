@@ -375,7 +375,21 @@ var d20pal = (function() {
     this.name = name || 'chainable';
     this.startChain = startChain || null;
 
-    this.chainLinks = [];
+    this.lppeTuples = [];
+  };
+
+  Chainable.priorityRankIncrement = 100;
+
+  Chainable.prototype.nextLowestPriorityRank = function() {
+    if (this.lppeTuples.length === 0) {
+      return Chainable.priorityRankIncrement;
+    } else {
+      var lowest = this.lppeTuples[this.lppeTuples.length-1][0],
+          incr = Chainable.priorityRankIncrement,
+          nextLowestRank = lowest - (lowest % incr) + incr;
+
+      return nextLowestRank;
+    }
   };
 
   /**
@@ -388,29 +402,24 @@ var d20pal = (function() {
    */
   Chainable.prototype.addLink = function(newLink, priority) {
     //console.log('Adding link to Chainable "' + this.name + '"');
-    newLink.priority = priority;
+    if (priority === undefined) {
+      priority = this.nextLowestPriorityRank();
+      this.lppeTuples[this.lppeTuples.length] = [newLink, priority, null];
+    } else {
+      for (var i = 0; i < this.lppeTuples.length; i++) {
+        if (priority > this.lppeTuples[i][1]) {
+          continue;
+        } else if (priority < this.lppetuples[i][1]) {
+          this.lppetuples.splice(i, 0, [newLink, priority, null]);
+        } else if (this.lppetuples[i][1] === priority - 1
+        // TODO: fix this function fps
 
-    var res = this.chainLinks.every(function(curLink, i) {
-      if (priority > curLink.priority) {
-        return true;
-      } else {
-        if (priority === curLink.priority) {
-          // Priorities are the same; try again with next highest
-          this.addLink(newLink, priority+1);
-          return false;
-        }
-
-        this.chainLinks.splice(i, 0, newLink);
-        return false;
-      }
-    }, this);
-
-    if (res) { // newLink is lowest priority
-      this.chainLinks.push(newLink);
-    }
+    this.getFinal();
 
     return newLink;
   };
+
+
 
   /**
    * Gets value of Chainable after the last link.
@@ -423,34 +432,12 @@ var d20pal = (function() {
     if (this.startChain) {
       curVal = this.startChain.getFinal(params);
     }
-    this.chainLinks.forEach(function(link) {
-      curVal = link.evaluate(curVal, params);
+    this.lppeTuples.forEach(function(tuple) {
+      curVal = tuple[0].evaluate(curVal, params);
+      tuple[2] = curVal;
     }, this);
 
     return curVal;
-  };
-
-  /**
-   * Gets the results of each ChainLink's evaluation.
-   *
-   * @param {object} params - Parameters used in chainable calculation.
-   * @return {array} Array of intermediate values used in evaluating
-   * the Chainable.
-   */
-  Chainable.prototype.getIntermediaries = function(params) {
-    var curVal = null;
-    if (this.startChain) {
-      curVal = this.startChain.getFinal(params);
-    }
-
-    var intermediaries = [];
-
-    this.chainLinks.forEach(function(link) {
-      curVal = link.evaluate(curVal, params);
-      intermediaries.push(curVal);
-    }, this);
-
-    return intermediaries;
   };
 
   /**

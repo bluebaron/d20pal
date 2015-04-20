@@ -28,9 +28,9 @@
         {{selectedChainable.startChain.name}}
         <span class="chainlinkresult">{{selectedChainable.startChain.getFinal()}}</span>
       </li>
-      <li ng-repeat="link in selectedChainable.chainLinks">
-        {{link.name}}
-        <span class="chainlinkresult">{{selectedChainableIntermediaries[$index]}}</span>
+      <li ng-repeat="tuple in selectedChainable.lppeTuples track by tuple[1]">
+        {{tuple[0].name}}
+        <span class="chainlinkresult">{{tuple[3]}}</span>
       </li>
       <li id="chain-link-management">
         <button id="chain-link-add">

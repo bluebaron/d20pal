@@ -15,7 +15,6 @@ angular.module('d20palApp')
     $scope.characters = [joe];
     $scope.selectedCharacter = null;
     $scope.selectedChainable = null;
-    $scope.selectedChainableIntermediaries = [];
 
     // Sets character highlighting in the UI
     var setCharacterHighlighted = function(character, hl) {
@@ -65,7 +64,6 @@ angular.module('d20palApp')
 
     $scope.selectChainable = function(name) {
       $scope.selectedChainable = $scope.selectedCharacter.getChainableByName(name);
-      $scope.selectedChainableIntermediaries = $scope.selectedChainable.getIntermediaries();
     };
 
     $scope.selectChainable('hp');
