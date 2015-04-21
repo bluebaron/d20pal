@@ -11,13 +11,16 @@
       </li>
     </ul>
     <table id="infopanel">
-      <tr ng-repeat="row in statRows">
+      <tr ng-repeat="row in filledStatDisplayTemplate"
+          ng-init="i = $index">
         <td
           ng-repeat="chainable in row"
           ng-click="selectChainable(chainable.name)"
-          class="{{getApplicableClasses(chainable.name)}}">
+          ng-init="j = $index"
+          class="{{getApplicableClasses(chainable.name)}}"
+          colspan="{{isNonTemplateStat(i*3+j) ? 3 : 1}}">
           {{chainable.getFinal()}}
-          <span class="chainable-name" ng-if="getAbbreviation(chainable.name) !== null">{{getAbbreviation(chainable.name)}}</span>
+          <span class="chainable-name" ng-if="getDisplayName(chainable.name) !== null">{{getDisplayName(chainable.name)}}</span>
         </td>
       </tr>
     </table>

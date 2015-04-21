@@ -661,6 +661,8 @@ var d20pal = (function() {
       charismamod.addLink(doubler, 200); // TODO: remove, this is only for testing
 
       var initiative = new Chainable('initiative', dexterity);
+      var testchain = new Chainable('bleeeeh');
+      testchain.addLink(new util.StaticChainLink('ble', 0));
 
       this.chainables = [
         hp, ac, initiative,
@@ -670,7 +672,8 @@ var d20pal = (function() {
         intelligence, intelligencemod,
         wisdom, wisdommod,
         charisma, charismamod,
-        fortitude, reflex, will
+        fortitude, reflex, will,
+        testchain
       ];
     }
     DND35Character.prototype = Object.create(Character.prototype);

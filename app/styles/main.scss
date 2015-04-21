@@ -237,7 +237,7 @@ $ratings: good better great awesome;
       @include clickable;
       position: relative;
       display: block;
-      // height: $chain-link-height;
+      height: $chain-link-height;
       background-color: #ccc;
       padding: $chain-link-padding;
       margin-bottom: $chain-link-spacing;
@@ -334,6 +334,7 @@ $ratings: good better great awesome;
 
       &#chain-link-management {
         text-align: left;
+        height: auto;
 
         > #add-container {
           > #new-chain-link-type {

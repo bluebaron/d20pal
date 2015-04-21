@@ -41,13 +41,41 @@ angular.module('d20palApp')
       ['reflex', 'wisdom', 'wisdom-modifier'],
       ['will', 'charisma', 'charisma-modifier']
     ];
-    function setStatRows(character) {
-      $scope.statRows = defaultStatDisplayTemplate.map(function(row) {
-        return row.map(function(cell) {
-          return character.getChainableByName(cell);
-        });
-      });
-    }
+    $scope.filledStatDisplayTemplate = [];
+
+    var fillStatDisplayTemplate = function() {
+      var indices = [];
+      $scope.filledStatDisplayTemplate = defaultStatDisplayTemplate.map(
+        function(row) {
+          return row.map(function(cell) {
+            var idx = $scope.selectedCharacter.chainables.map(
+                        function(chainable) {
+                          return chainable.name;
+                        }
+                      ).indexOf(cell);
+            if (idx !== -1) {
+              indices.push(idx);
+              return $scope.selectedCharacter.chainables[idx];
+            } else {
+              return null;
+            }
+          });
+        }
+      ).concat($scope.selectedCharacter.chainables.filter(function(chainable, i) {
+        return indices.indexOf(i) === -1;
+      }).map(function(chainable) {
+        return [chainable];
+      }));
+      console.log(indices);
+    };
+
+    $scope.isNonTemplateStat = function(index) {
+      if (index >= 18) { // recursive length of defaultStatDisplayTemplate
+        return true;
+      } else {
+        return false;
+      }
+    };
 
     // Selects character and highlights appropriately
     $scope.selectCharacter = function(characterIndex) {
@@ -62,7 +90,7 @@ angular.module('d20palApp')
       setCharacterHighlighted($scope.selectedCharacter, false);
       $scope.selectedCharacter = character;
       setCharacterHighlighted(character, true);
-      setStatRows(character);
+      fillStatDisplayTemplate();
     };
 
     $scope.selectCharacter(0);
@@ -87,63 +115,65 @@ angular.module('d20palApp')
       var applicableClasses = [];
 
       switch(name) {
-        case 'strength-modifier':
-        case 'dexterity-modifier':
-        case 'constitution-modifier':
-        case 'intelligence-modifier':
-        case 'wisdom-modifier':
-        case 'charisma-modifier':
-          applicableClasses.push(getRating($scope.selectedCharacter.getChainableByName(name).getFinal()));
         case 'strength':
         case 'dexterity':
         case 'constitution':
         case 'intelligence':
         case 'wisdom':
         case 'charisma':
+        case 'hp':
+        case 'initiative':
         case 'fortitude':
         case 'reflex':
         case 'will':
           applicableClasses.push(name);
           break;
-        case 'hp':
-          applicableClasses.push('hp');
+        case 'strength-modifier':
+        case 'dexterity-modifier':
+        case 'constitution-modifier':
+        case 'intelligence-modifier':
+        case 'wisdom-modifier':
+        case 'charisma-modifier':
+          applicableClasses.push(name);
+          applicableClasses.push(getRating($scope.selectedCharacter.getChainableByName(name).getFinal()));
           break;
         default:
+          applicableClasses.push('non-template-stat');
           break;
       }
 
       return applicableClasses.join(' ');
     };
 
-    $scope.getAbbreviation = function(name) {
-      var idx = null; 
-      $scope.selectedCharacter.chainables.forEach(function(chain, i) {
-        if (chain.name === name) {
-          idx = i;
-        }
-      });
+    window.testing = $scope;
 
-      if (idx !== null) {
-        var chain = $scope.selectedCharacter.chainables[idx];
-        switch (chain.name) {
-          case 'strength':
-          case 'dexterity':
-          case 'constitution':
-          case 'intelligence':
-          case 'wisdom':
-          case 'charisma':
-          case 'reflex':
-            return chain.name.substr(0,3).toUpperCase();
-          case 'fortitude':
-          case 'will':
-          case 'initiative':
-            return chain.name.substr(0,4).toUpperCase();
-          case 'hp':
-          case 'ac': 
-            return chain.name.toUpperCase();
-          default:
-            return;
-        }
+    $scope.getDisplayName = function(name) {
+      switch (name) {
+        case 'strength':
+        case 'dexterity':
+        case 'constitution':
+        case 'intelligence':
+        case 'wisdom':
+        case 'charisma':
+        case 'reflex':
+          return name.substr(0,3).toUpperCase();
+        case 'strength-modifier':
+        case 'dexterity-modifier':
+        case 'constitution-modifier':
+        case 'intelligence-modifier':
+        case 'wisdom-modifier':
+        case 'charisma-modifier':
+          return null;
+        case 'reflex':
+        case 'fortitude':
+        case 'will':
+        case 'initiative':
+          return name.substr(0,4).toUpperCase();
+        case 'hp':
+        case 'ac': 
+          return name.toUpperCase();
+        default:
+          return name.toUpperCase();
       }
     };
     
@@ -165,7 +195,8 @@ angular.module('d20palApp')
         props: [
           {
             name: 'multiplier',
-            type: 'number'
+            type: 'number',
+            representationKey: 'multiplier'
           }
         ]
       }
@@ -174,7 +205,7 @@ angular.module('d20palApp')
     $scope.addChainLink = function() {
       var args = {};
       $scope.newChainLinkType.props.forEach(function(prop) {
-        args[prop.name] = prop.value;
+        args[prop.representationKey] = prop.value;
       });
 
       var newlink = $scope.newChainLinkType.$constructor.fromRepresentation(args);
