@@ -333,14 +333,40 @@ $ratings: good better great awesome;
       }
 
       &#chain-link-management {
-        > #chain-link-add {
-          padding: 0;
-          border: none;
-          background-color: transparent;
-          width: 50%;
-          
-          font-size: 20px;
-          line-height: 20px;
+        > #add-container {
+          > #new-chain-link-type {
+            border-bottom: 1px solid #fff;
+            overflow: hidden;
+            position: relative;
+
+            > select {
+              width: 200px;
+              padding: 0;
+              border: none;
+              background-color: transparent;
+              float: left;
+              color: #fff;
+            }
+            
+            &::after {
+              content: '\25BC';
+              position: absolute;
+              display: block;
+              right: 0;
+            }
+          }
+
+          > button {
+            border: none;
+            padding: 0;
+            padding-left: 10px;
+            background-color: transparent;
+            
+            font-size: 20px;
+            line-height: 20px;
+
+            float: right;
+          }
         }
       }
     } // /li

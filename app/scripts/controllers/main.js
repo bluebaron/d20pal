@@ -10,11 +10,20 @@
 /* global d20pal: false */
 angular.module('d20palApp')
   .controller('MainCtrl', function ($scope) {
+    //////////////////////////////////////////////////
+    // Character Management
+    //////////////////////////////////////////////////
     var joe = new d20pal.dnd35.DND35Character('Joe');
     window.joe = joe;
     $scope.characters = [joe];
     $scope.selectedCharacter = null;
     $scope.selectedChainable = null;
+    $scope.addableChainLinkTypes = [
+      {
+        $constructor: d20pal.util.MultiplierChainLink,
+        typeName:     'Multiplier'
+      }
+    ];
 
     // Sets character highlighting in the UI
     var setCharacterHighlighted = function(character, hl) {
@@ -27,6 +36,9 @@ angular.module('d20palApp')
       }
     };
 
+    //////////////////////////////////////////////////
+    // Stat Display
+    //////////////////////////////////////////////////
     $scope.statRows = [];
     var defaultStatDisplayTemplate = [
       ['hp', 'strength', 'strength-modifier'],
@@ -147,5 +159,11 @@ angular.module('d20palApp')
         }
       }
     };
-
+    
+    //////////////////////////////////////////////////
+    // Chain management
+    //////////////////////////////////////////////////
+    $scope.addChainLink = function() {
+      alert($scope.newChainLinkType);
+    };
   });
