@@ -237,7 +237,7 @@ $ratings: good better great awesome;
       @include clickable;
       position: relative;
       display: block;
-      height: $chain-link-height;
+      // height: $chain-link-height;
       background-color: #ccc;
       padding: $chain-link-padding;
       margin-bottom: $chain-link-spacing;
@@ -333,6 +333,8 @@ $ratings: good better great awesome;
       }
 
       &#chain-link-management {
+        text-align: left;
+
         > #add-container {
           > #new-chain-link-type {
             border-bottom: 1px solid #fff;
@@ -366,6 +368,22 @@ $ratings: good better great awesome;
             line-height: 20px;
 
             float: right;
+          }
+          
+          > #new-chain-link-props {
+            margin-top: 10px;
+          }
+        }
+
+        input[type=text] {
+          border: 0;
+          border-bottom: 1px solid #fff;
+          background-color: transparent;
+
+          &.number {
+            width: 40px; // TODO: this is completely arbitrary and should
+            // probably be made more fluid
+            text-align: right;
           }
         }
       }

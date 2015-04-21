@@ -41,6 +41,21 @@
             <select ng-model="newChainLinkType" ng-options="link.typeName for link in addableChainLinkTypes">
             </select>
           </div>
+          <div id="new-chain-link-props">
+            <div ng-repeat="prop in newChainLinkType.props">
+              {{prop.name}}:
+              <input type="text"
+                ng-if="prop.type === 'number'"
+                ng-model="prop.value"
+                class="number"
+                placeholder="{{prop.example}}">
+              <input type="text"
+                ng-if="prop.type === 'text'"
+                ng-model="prop.value"
+                class="text"
+                placeholder="{{prop.example}}">
+            </div>
+          </div>
         </div>
       </li>
     </ul>

@@ -17,13 +17,6 @@ angular.module('d20palApp')
     window.joe = joe;
     $scope.characters = [joe];
     $scope.selectedCharacter = null;
-    $scope.selectedChainable = null;
-    $scope.addableChainLinkTypes = [
-      {
-        $constructor: d20pal.util.MultiplierChainLink,
-        typeName:     'Multiplier'
-      }
-    ];
 
     // Sets character highlighting in the UI
     var setCharacterHighlighted = function(character, hl) {
@@ -73,12 +66,6 @@ angular.module('d20palApp')
     };
 
     $scope.selectCharacter(0);
-
-    $scope.selectChainable = function(name) {
-      $scope.selectedChainable = $scope.selectedCharacter.getChainableByName(name);
-    };
-
-    $scope.selectChainable('hp');
 
     function getRating(modifier) {
       var rating = '';
@@ -163,7 +150,34 @@ angular.module('d20palApp')
     //////////////////////////////////////////////////
     // Chain management
     //////////////////////////////////////////////////
+    $scope.selectedChainable = null;
+
+    $scope.selectChainable = function(name) {
+      $scope.selectedChainable = $scope.selectedCharacter.getChainableByName(name);
+    };
+
+    $scope.selectChainable('hp');
+
+    $scope.addableChainLinkTypes = [
+      {
+        $constructor: d20pal.util.MultiplierChainLink,
+        typeName:     'Multiplier',
+        props: [
+          {
+            name: 'multiplier',
+            type: 'number'
+          }
+        ]
+      }
+    ];
+
     $scope.addChainLink = function() {
-      alert($scope.newChainLinkType);
+      var args = {};
+      $scope.newChainLinkType.props.forEach(function(prop) {
+        args[prop.name] = prop.value;
+      });
+
+      var newlink = $scope.newChainLinkType.$constructor.fromRepresentation(args);
+      $scope.selectedChainable.addLink(newlink);
     };
   });
