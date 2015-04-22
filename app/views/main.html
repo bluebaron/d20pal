@@ -4,12 +4,22 @@
   </div>
 </div>
 <div class="row" id="infocontainer">
-  <div class="col-sm-3" id="characterlist">
-    <ul>
-      <li ng-repeat="character in characters">
-        <div ng-class="{'selected-character': character.selected}" ng-click="selectCharacter($index)">{{character.name}}</div>
-      </li>
-    </ul>
+  <div class="col-sm-3">
+    <div id="character-options">
+      <div id="character-list">
+        <select ng-options="character.name for character in characters" ng-model="selectedCharacter">
+        </select>
+      </div>
+      <button class="character-option">
+        <span class="glyphicon glyphicon-floppy-open character-option"></span>
+      </button>
+      <button class="character-option" ng-click="deleteCurrentCharacter()">
+        <span class="glyphicon glyphicon-trash character-option"></span>
+      </button>
+      <button class="character-option">
+        <span class="glyphicon glyphicon-floppy-save character-option"></span>
+      </button>
+    </div>
     <table id="infopanel">
       <tr ng-repeat="row in filledStatDisplayTemplate"
           ng-init="i = $index">
@@ -23,6 +33,16 @@
           <span class="chainable-name" ng-if="getDisplayName(chainable.name) !== null">{{getDisplayName(chainable.name)}}</span>
         </td>
       </tr>
+      <tr id="chainable-add">
+        <td colspan="2">
+          <input type="text" placeholder="new chain" ng-model="newChainableName">
+        </td>
+        <td colspan="1">
+          <button ng-click="addNewChainable()">
+            <span class="glyphicon glyphicon-plus">
+          </button>
+        </td>
+      </tr>
     </table>
   </div>
   <div class="col-sm-3" id="chainlinks">
@@ -31,7 +51,7 @@
         {{selectedChainable.startChain.name}}
         <span class="chainlinkresult">{{selectedChainable.startChain.getFinal()}}</span>
       </li>
-      <li ng-repeat="tuple in selectedChainable.lppeTuples">
+      <li ng-repeat="tuple in selectedChainable.chainTuples">
         {{tuple[0].name}}
         <span class="chainlinkresult">{{tuple[2]}}</span>
       </li>
@@ -42,6 +62,7 @@
           </button>
           <div id="new-chain-link-type">
             <select ng-model="newChainLinkType" ng-options="link.typeName for link in addableChainLinkTypes">
+              <option disabled selected style="display:none" value="">link type</option>
             </select>
           </div>
           <div id="new-chain-link-props">

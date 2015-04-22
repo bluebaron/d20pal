@@ -18,14 +18,23 @@ angular.module('d20palApp')
     $scope.characters = [joe];
     $scope.selectedCharacter = null;
 
-    // Sets character highlighting in the UI
-    var setCharacterHighlighted = function(character, hl) {
-      if (character === null) {
-        return;
-      } else if (hl) {
-        character.selected = true;
-      } else {
-        character.selected = false;
+    $scope.$watch(function(scope) {
+      return $scope.selectedCharacter;
+    }, function(scope) {
+      $scope.fillStatDisplayTemplate();
+    });
+
+    $scope.selectedCharacter = joe;
+
+    $scope.deleteCurrentCharacter = function() {
+      if (window.confirm(
+        'Are you sure you would like to delete character "' +
+        $scope.selectedCharacter.getName() + '"?')) {
+        $scope.characters.splice($scope.characters.indexOf($scope.selectedCharacter), 1);
+        if ($scope.characters.length === 0) {
+          $scope.characters.push(joe);
+        }
+        $scope.selectedCharacter = $scope.characters[0];
       }
     };
 
@@ -43,7 +52,7 @@ angular.module('d20palApp')
     ];
     $scope.filledStatDisplayTemplate = [];
 
-    var fillStatDisplayTemplate = function() {
+    $scope.fillStatDisplayTemplate = function() {
       var indices = [];
       $scope.filledStatDisplayTemplate = defaultStatDisplayTemplate.map(
         function(row) {
@@ -66,7 +75,6 @@ angular.module('d20palApp')
       }).map(function(chainable) {
         return [chainable];
       }));
-      console.log(indices);
     };
 
     $scope.isNonTemplateStat = function(index) {
@@ -76,24 +84,6 @@ angular.module('d20palApp')
         return false;
       }
     };
-
-    // Selects character and highlights appropriately
-    $scope.selectCharacter = function(characterIndex) {
-      var character = $scope.characters[characterIndex];
-      if (character === undefined || character === null) {
-        console.log('Null character.');
-        return;
-      }
-
-      console.log('Selecting character ' + character.name  +'.');
-
-      setCharacterHighlighted($scope.selectedCharacter, false);
-      $scope.selectedCharacter = character;
-      setCharacterHighlighted(character, true);
-      fillStatDisplayTemplate();
-    };
-
-    $scope.selectCharacter(0);
 
     function getRating(modifier) {
       var rating = '';
@@ -144,8 +134,6 @@ angular.module('d20palApp')
 
       return applicableClasses.join(' ');
     };
-
-    window.testing = $scope;
 
     $scope.getDisplayName = function(name) {
       switch (name) {
@@ -210,5 +198,16 @@ angular.module('d20palApp')
 
       var newlink = $scope.newChainLinkType.$constructor.fromRepresentation(args);
       $scope.selectedChainable.addLink(newlink);
+    };
+
+    $scope.addNewChainable = function() {
+      if ($scope.newChainableName && $scope.newChainableName.length > 0) {
+        var newChainable = new d20pal.Chainable($scope.newChainableName);
+        newChainable.addLink(new d20pal.util.StaticChainLink('default first link', 0));
+
+        $scope.selectedCharacter.addChainable(newChainable);
+        $scope.filledStatDisplayTemplate.push([newChainable]);
+        console.log($scope.selectedCharacter);
+      }
     };
   });

@@ -379,16 +379,19 @@ var d20pal = (function() {
     this.name = name || 'chainable';
     this.startChain = startChain || null;
 
-    this.lppeTuples = [];
+    // [0] = ChainLink object
+    // [1] = Priority
+    // [2] = Partial evaluation of chain following this link
+    this.chainTuples = [];
   };
 
   Chainable.priorityRankIncrement = 100;
 
   Chainable.prototype.nextLowestPriorityRank = function() {
-    if (this.lppeTuples.length === 0) {
+    if (this.chainTuples.length === 0) {
       return Chainable.priorityRankIncrement;
     } else {
-      var lowest = this.lppeTuples[this.lppeTuples.length-1][1],
+      var lowest = this.chainTuples[this.chainTuples.length-1][1],
           incr = Chainable.priorityRankIncrement,
           nextLowestRank = lowest - (lowest % incr) + incr;
 
@@ -407,20 +410,20 @@ var d20pal = (function() {
   Chainable.prototype.addLink = function(newLink, priority) {
     if (priority === undefined) {
       priority = this.nextLowestPriorityRank();
-      this.lppeTuples.push([newLink, priority, null]);
+      this.chainTuples.push([newLink, priority, null]);
     } else {
-      if (this.lppeTuples.length === 0) {
-        this.lppeTuples.push([newLink, priority, null]);
+      if (this.chainTuples.length === 0) {
+        this.chainTuples.push([newLink, priority, null]);
       }
 
-      for (var i = 0; i < this.lppeTuples.length; i++) {
-        if (priority > this.lppeTuples[i][1]) {
+      for (var i = 0; i < this.chainTuples.length; i++) {
+        if (priority > this.chainTuples[i][1]) {
           continue;
-        } else if (priority < this.lppeTuples[i][1]) {
-          this.lppeTuples.splice(i, 0, [newLink, priority, null]);
+        } else if (priority < this.chainTuples[i][1]) {
+          this.chainTuples.splice(i, 0, [newLink, priority, null]);
         } else {
           var j = i;
-          while (this.lppeTuples[j][1] === priority - 1) {
+          while (this.chainTuples[j][1] === priority - 1) {
             priority -= 1;
             j -= 1;
           }
@@ -446,7 +449,7 @@ var d20pal = (function() {
     if (this.startChain) {
       curVal = this.startChain.getFinal(params);
     }
-    this.lppeTuples.forEach(function(tuple) {
+    this.chainTuples.forEach(function(tuple) {
       curVal = tuple[0].evaluate(curVal, params);
       tuple[2] = curVal;
     }, this);
@@ -461,13 +464,13 @@ var d20pal = (function() {
    * @returns {Object} Object representation of Chainable.
    */
   Chainable.prototype.getRepresentation = function() {
-    var chainlinks = this.chainLinks.map(function(chainlink) {
-      return chainlink.getRepresentation();
+    var chainTupleRepresentations = this.chainTuples.map(function(tuple) {
+      return tuple[0].getRepresentation();
     });
 
     var obj = {
       name: this.name,
-      chainlinks: chainlinks
+      chainTuples: chainTupleRepresentations
     };
 
     if (this.startChain) {
@@ -524,6 +527,14 @@ var d20pal = (function() {
    */
   Character.prototype.getName = function() {
     return this.name;
+  };
+
+  /**
+   * Adds a chainable to a Character's chainable list.
+   * @param {Chainable} chainable - Chainable instance to be added.
+   */
+  Character.prototype.addChainable = function(chainable) {
+    this.chainables.push(chainable);
   };
 
   /**
@@ -662,7 +673,7 @@ var d20pal = (function() {
 
       var initiative = new Chainable('initiative', dexterity);
       var testchain = new Chainable('bleeeeh');
-      testchain.addLink(new util.StaticChainLink('ble', 0));
+      testchain.addLink(new util.StaticChainLink('ble', 15));
 
       this.chainables = [
         hp, ac, initiative,
