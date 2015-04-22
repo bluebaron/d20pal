@@ -465,7 +465,10 @@ var d20pal = (function() {
    */
   Chainable.prototype.getRepresentation = function() {
     var chainTupleRepresentations = this.chainTuples.map(function(tuple) {
-      return tuple[0].getRepresentation();
+      return [
+        tuple[0].getRepresentation(),
+        tuple[1] // don't bother saving partials
+      ];
     });
 
     var obj = {
@@ -480,24 +483,46 @@ var d20pal = (function() {
     return obj;
   };
 
-  Chainable.fromRepresentation = function(rep, character) {
-    var startChain = null,
-        chain = null;
+  Chainable.fromRepresentation = (function() {
+    // function-local static
+    var neededStartChains = [];
 
-    if (rep.startChain) {
-      startChain = character.getChainableByName(rep.startChain);
-      chain = new Chainable(rep.name, startChain);
-    } else {
-      chain = new Chainable(rep.name);
-    }
+    return function(rep, character) {
+      var chain = null;
 
-    rep.chainlinks.forEach(function(linkRep) {
-      var chainlink = ChainLink.fromRepresentation(linkRep, character);
-      chain.addLink(chainlink, linkRep.priority);
-    });
+      if (rep.startChain) { // startChain is not yet loaded
+        var startChain = character.getChainableByName(rep.startChain);
 
-    return chain;
-  };
+        if (!startChain) {
+          if (neededStartChains[rep.name]) {
+            neededStartChains[rep.name].push(rep);
+          } else {
+            neededStartChains[rep.name] = [rep];
+          }
+
+          chain = new Chainable(rep.name);
+        } else { // Character already has startChain
+          chain = new Chainable(rep.name, startChain);
+        }
+      } else { // no startChain necessary
+        chain = new Chainable(rep.name);
+
+        if (neededStartChains[rep.name]) {
+          neededStartChains[rep.name].forEach(function(chainMissingStart) {
+            console.log('hey');
+            chainMissingStart.startChain = chain;
+          });
+        }
+      }
+
+      rep.chainTuples.forEach(function(tuple) {
+        var chainLink = ChainLink.fromRepresentation(tuple[0], character);
+        chain.addLink(chainLink, tuple[1]);
+      });
+
+      return chain;
+    };
+  })();
 
   // End of Chainable class
 
@@ -511,6 +536,7 @@ var d20pal = (function() {
    */
   var Character = function(name) {
     this.name = name;
+    this.tag('character');
   };
 
   /**
@@ -587,6 +613,8 @@ var d20pal = (function() {
         return this.chainables[i];
       }
     }
+
+    return null;
   };
 
   // Make Characters taggable
