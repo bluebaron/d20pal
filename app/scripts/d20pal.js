@@ -243,8 +243,10 @@ var d20pal = (function() {
       var numdice   = parseInt(res[1]),
           numsides  = parseInt(res[2]),
           addend    = res[3]?parseInt(res[3]):null;
-      if (!(numdice && numsides)) {
+      if (!numsides) {
         return false;
+      } else if (!numdice) {
+        numdice = 1;
       }
 
       this.numdice = numdice;
