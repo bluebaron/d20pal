@@ -321,7 +321,10 @@ var d20pal = (function() {
      */
     function StaticChainLink(name, value) {
       this.value = value;
-      var callback = function(){return value;};
+      var that = this;
+      var callback = function() {
+        return that.value;
+      };
       ChainLink.call(this, name, callback);
       this.tag('static');
     }
@@ -351,7 +354,10 @@ var d20pal = (function() {
      */
     function MultiplierChainLink(name, multiplier) {
       this.multiplier = multiplier;
-      var callback = function(oldVal){return oldVal*multiplier;};
+      var that = this;
+      var callback = function(oldVal) {
+        return oldVal * that.multiplier;
+      };
       ChainLink.call(this, name, callback);
       this.tag('multiplier');
     }
@@ -383,14 +389,14 @@ var d20pal = (function() {
         };
         this.tag('static-adder');
       } else if (typeof addend === 'string') { // Dynamic addend
-        var chain = character.getChainableByName(addend);
-        if (chain === null) {
-          throw 'Could not find chainable "' + addend + '" on character "' +
-                character.getName() + '".';
-        }
-
+        var that = this;
         callback = function(oldVal, params) {
-          return oldVal + chain.getFinal(params);
+          var chain = that.character.getChainableByName(that.addend);
+          if (!chain) {
+            return oldVal;
+          } else {
+            return oldVal + chain.getFinal();
+          }
         };
         this.tag('dynamic-adder');
       }
@@ -406,29 +412,22 @@ var d20pal = (function() {
       var rep = ChainLink.prototype.getRepresentation.call(this);
       if (this.isTagged('dynamic-adder')) {
         rep.type = 'dynamic';
-        rep.addend = this.addend.name;
       } else {
         rep.type = 'static';
-        rep.addend = this.addend;
       }
+
+      rep.addend = this.addend;
     };
 
     AdderChainLink.fromRepresentation = function(rep, character) {
-      var addend = null,
-          name = null;
+      var name = null;
       if (rep.type === 'static') {
-        addend = rep.addend;
         name = addend.toString() + ' adder';
       } else if (rep.type === 'dynamic') {
-        addend = character.getChainableByName(rep.addend);
         name = rep.addend.name + ' adder';
       }
 
-      if (!addend) {
-        return null;
-      }
-
-      return new AdderChainLink(name, addend, character);
+      return new AdderChainLink(name, rep.addend, character);
     };
 
     return {
