@@ -50,7 +50,7 @@ body {
   }
 }
 
-@mixin flat-select($chrome-color) {
+@mixin flat-select($chrome-color, $background-color:"") {
   border-bottom: 1px solid $chrome-color;
   overflow: hidden;
   position: relative;
@@ -67,10 +67,20 @@ body {
   &::after {
     content: '\25BC';
     position: absolute;
+    overflow: visible;
     display: block;
     right: 0;
+    width: 20px;
+
+    // fade near dropdown arrow
+    @if $background-color != "" {
+      text-align: right;
+      background: linear-gradient(to right, rgba($background-color, 0), $background-color);
+      z-index: 10;
+    }
   }
 }
+
 @mixin modal-free-button {
   border: none;
   padding: 0;
@@ -97,6 +107,8 @@ body {
   }
 }
 
+$infopanel-chrome-color: #111;
+
 /* Character list */
 #character-options {
   overflow: hidden;
@@ -113,23 +125,44 @@ body {
     }
   }
 
-  > .character-option {
-    @include modal-free-button;
-    font-size: 20px;
-    width: 33.33%;
-    float: left;
+  > #character-options-buttons {
+    > .character-option {
+      @include modal-free-button;
+      font-size: 20px;
+      width: 33.33%;
+      float: left;
 
-    text-align: center;
-
-    &:last-of-type::after {
-      @include clearfix;
+      text-align: center;
     }
   }
-  
-  > #character-list {
-    @include flat-select(#111);
 
-    margin-bottom: 10px;
+    > #character-list {
+      @include flat-select($infopanel-chrome-color);
+
+      margin-bottom: 10px;
+    }
+
+  > #character-json-data {
+    overflow: auto;
+    margin-top: 10px;
+    border: 1px solid $infopanel-chrome-color;
+
+    &.ng-enter {
+      height: 0;
+      transition: 0.3s ease-in-out all;
+      
+      &-active {
+        height: 100px;
+      }
+    }
+
+    > textarea {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background-color: transparent;
+      resize: none;
+    }
   }
 }
 
@@ -176,7 +209,7 @@ $ratings: good better great awesome;
     > tr {
       > td {
         height: $table-row-height;
-        color: #111;
+        color: $infopanel-chrome-color;
 
         border: $table-border;
 
@@ -265,7 +298,7 @@ $ratings: good better great awesome;
 
       &#chainable-add {
         > td {
-          > input[type=text] {
+          input[type=text] {
             width: 100%;
             border: 0;
             border-bottom: 1px solid #000;
@@ -293,6 +326,7 @@ $ratings: good better great awesome;
   $chain-link-height: 60px;
   $chain-link-spacing: 30px;
   $chain-link-padding: 10px;
+  $chain-link-color: #ccc;
   $transition-timing-function-enter: ease-out;
   $transition-timing-function-move: ease;
   $transition-timing-function-leave: ease-out;
@@ -308,11 +342,10 @@ $ratings: good better great awesome;
     @include clearfix;
 
     > li {
-      @include clickable;
       position: relative;
       display: block;
       height: $chain-link-height;
-      background-color: #ccc;
+      background-color: $chain-link-color;
       padding: $chain-link-padding;
       margin-bottom: $chain-link-spacing;
       border-radius: 10px;
@@ -412,7 +445,7 @@ $ratings: good better great awesome;
 
         > #add-container {
           > #new-chain-link-type {
-            @include flat-select(#fff);
+            @include flat-select(#fff, $chain-link-color);
 
             > select {
               width: 200px;
@@ -431,13 +464,14 @@ $ratings: good better great awesome;
           }
         }
 
-        input[type=text] {
+        input[type=text], input[type=number] {
+          width: 100%;
           border: 0;
           border-bottom: 1px solid #fff;
           background-color: transparent;
 
           &.number {
-            width: 40px; // TODO: this is completely arbitrary and should
+            width: 50px; // TODO: this is completely arbitrary and should
             // probably be made more fluid
             text-align: right;
           }

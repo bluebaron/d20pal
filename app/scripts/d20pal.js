@@ -335,18 +335,21 @@ var d20pal = (function() {
     };
 
     AdderChainLink.fromRepresentation = function(rep, character) {
-      var addend = null;
+      var addend = null,
+          name = null;
       if (rep.type === 'static') {
         addend = rep.addend;
+        name = addend.toString() + ' adder';
       } else if (rep.type === 'dynamic') {
         addend = character.getChainableByName(rep.addend);
+        name = rep.addend.name + ' adder';
       }
 
       if (!addend) {
         return null;
       }
 
-      return new AdderChainLink(rep.name, addend, character);
+      return new AdderChainLink(name, addend, character);
     };
 
     return {
@@ -589,8 +592,14 @@ var d20pal = (function() {
    * @returns {Character} The character described by the JSON string.
    */
   Character.fromString = function(str) {
-    var obj = JSON.parse(str),
-        character = new Character(obj.name);
+    var obj = null, character = null;
+
+    try {
+      obj = JSON.parse(str);
+      character = new Character(obj.name);
+    } catch (e) {
+      return false;
+    }
 
     character.tags = [];
     character.tag(obj.tags);

@@ -10,15 +10,25 @@
         <select ng-options="character.name for character in characters" ng-model="selectedCharacter">
         </select>
       </div>
-      <button class="character-option">
-        <span class="glyphicon glyphicon-floppy-open character-option"></span>
-      </button>
-      <button class="character-option" ng-click="deleteCurrentCharacter()">
-        <span class="glyphicon glyphicon-trash character-option"></span>
-      </button>
-      <button class="character-option">
-        <span class="glyphicon glyphicon-floppy-save character-option"></span>
-      </button>
+      <div id="character-options-buttons">
+        <button class="character-option" ng-click="showImport = true">
+          <span class="glyphicon glyphicon-paste character-option"></span>
+        </button>
+        <button class="character-option" ng-click="deleteCurrentCharacter()">
+          <span class="glyphicon glyphicon-trash character-option"></span>
+        </button>
+        <button class="character-option" ng-click="exportCharacter()">
+          <span class="glyphicon glyphicon-floppy-save character-option"></span>
+        </button>
+      </div>
+      <div id="character-json-data" ng-show="showImport">
+        <textarea
+          ng-model="newCharacterJSON"
+          ng-change="importCharacter(newCharacterJSON)"
+          placeholder="Paste character JSON here"
+          resizable="false">
+        </textarea>
+      </div>
     </div>
     <table id="infopanel">
       <tr ng-repeat="row in filledStatDisplayTemplate"
@@ -66,18 +76,17 @@
             </select>
           </div>
           <div id="new-chain-link-props">
-            <div ng-repeat="prop in newChainLinkType.props">
+            <div ng-repeat="prop in newChainLinkType.props | filter:isShown">
               {{prop.name}}:
-              <input type="text"
+              <input type="number"
                 ng-if="prop.type === 'number'"
                 ng-model="prop.value"
                 class="number"
-                placeholder="{{prop.example}}">
+                placeholder="#">
               <input type="text"
                 ng-if="prop.type === 'text'"
                 ng-model="prop.value"
-                class="text"
-                placeholder="{{prop.example}}">
+                class="text">
             </div>
           </div>
         </div>

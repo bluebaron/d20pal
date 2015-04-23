@@ -38,6 +38,30 @@ angular.module('d20palApp')
       }
     };
 
+    $scope.importCharacter = function(json) {
+      var newCharacter = d20pal.Character.fromString(json);
+      if (newCharacter) {
+        $scope.characters.push(newCharacter);
+        $scope.selectedCharacter = newCharacter;
+        $scope.showImport = false;
+        $scope.newCharacterJSON = '';
+      } else {
+        $scope.newCharacterJSON = 'Could not parse character JSON!';
+        setTimeout(function() {
+          $scope.newCharacterJSON = '';
+          $scope.showImport = false;
+          $scope.$apply();
+        }, 1000);
+      }
+    };
+
+    $scope.exportCharacter = function() {
+      var dataURI = 'data:application/octet-stream;charset=utf-8;';
+      dataURI += $scope.selectedCharacter.serialize();
+
+      window.open(dataURI);
+    };
+
     //////////////////////////////////////////////////
     // Stat Display
     //////////////////////////////////////////////////
@@ -187,8 +211,46 @@ angular.module('d20palApp')
             representationKey: 'multiplier'
           }
         ]
+      },
+      {
+        $constructor: d20pal.util.AdderChainLink,
+        typeName:     'Dynamic Adder',
+        props: [
+          {
+            name: 'addend',
+            type: 'text',
+            representationKey: 'addend'
+          },
+          {
+            representationKey: 'type',
+            value: 'dynamic'
+          }
+        ]
+      },
+      {
+        $constructor: d20pal.util.AdderChainLink,
+        typeName:     'Static Adder',
+        props: [
+          {
+            name: 'addend',
+            type: 'number',
+            representationKey: 'addend'
+          },
+          {
+            representationKey: 'type',
+            value: 'static'
+          }
+        ]
       }
     ];
+    
+    $scope.isShown = function(prop) {
+      if (prop.name) {
+        return true;
+      } else {
+        return false;
+      }
+    };
 
     $scope.addChainLink = function() {
       var args = {};
@@ -196,7 +258,7 @@ angular.module('d20palApp')
         args[prop.representationKey] = prop.value;
       });
 
-      var newlink = $scope.newChainLinkType.$constructor.fromRepresentation(args);
+      var newlink = $scope.newChainLinkType.$constructor.fromRepresentation(args, $scope.selectedCharacter);
       $scope.selectedChainable.addLink(newlink);
     };
 
