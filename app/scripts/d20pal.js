@@ -257,16 +257,38 @@ var d20pal = (function() {
     };
 
     Dice.roll = function(dicestr) {
-      var res = Dice.parse(dicestr);
+      var numdice   = null,
+          numsides  = 6,
+          addend    = null;
+
+      if (typeof dicestr === 'number') {
+        numdice = arguments[0];
+
+        if (arguments.length > 1) {
+          numsides = arguments[1];
+          
+          if (arguments.length > 2) {
+            addend = arguments[2];
+          }
+        }
+      } else {
+        var res = Dice.parse(dicestr);
+        if (!res) {
+          return false;
+        }
+        numdice = res.numdice;
+        numsides = res.numsides;
+        addend = res.addend;
+      }
 
       var total = 0;
-      for (var i = 0; i < res.numdice; i++) {
-        var rolledvalue = Math.floor(Math.random() * res.numsides) + 1;
+      for (var i = 0; i < numdice; i++) {
+        var rolledvalue = Math.floor(Math.random() * numsides) + 1;
         total += rolledvalue;
       }
 
-      if (res.addend) {
-        total += res.addend;
+      if (addend) {
+        total += addend;
       }
 
       return total;
@@ -274,10 +296,14 @@ var d20pal = (function() {
 
     Dice.highestOf = function(dicestr, num) {
       var results = [],
-          dice = new Dice(dicestr);
+          dice = Dice.parse(dicestr);
+      
+      if (!dice) {
+        return false;
+      }
 
       for (var i = 0; i < dice.numdice; i++) {
-        results.push(dice.roll());
+        results.push(Dice.roll(1, dice.numsides, dice.addend));
       }
 
       return results.sort(function(a,b){return a>b;}).slice(-num);
@@ -591,7 +617,7 @@ var d20pal = (function() {
    * @memberof module:d20pal
    */
   var Character = function(name) {
-    this.name = name;
+    this.name = name || 'New Character';
     this.tag('character');
   };
 
@@ -690,6 +716,107 @@ var d20pal = (function() {
    * @memberof module:d20pal
    */
   var dnd35 = (function() {
+    var raceInfo = {
+      'human': {
+        apply: function(character) {
+          var sizeModifierChainable = new Chainable('size-modifier'),
+              sizeModifierLink = new util.StaticChainLink('size modifier', 0);
+          sizeModifierLink.tag('race', 'human', 'size');
+          sizeModifierChainable.addLink(sizeModifierLink);
+          character.addChainable(sizeModifierChainable);
+        }
+      },
+      'dwarf': {
+        apply: function(character) {
+          var sizeModifierChainable = new Chainable('size-modifier'),
+              sizeModifierLink = new util.StaticChainLink('size modifier', 0);
+          sizeModifierLink.tag('race', 'dwarf', 'size');
+          sizeModifierChainable.addLink(sizeModifierLink);
+          character.addChainable(sizeModifierChainable);
+        }
+      'elf': {
+        apply: function(character) {
+          var sizeModifierChainable = new Chainable('size-modifier'),
+              sizeModifierLink = new util.StaticChainLink('size modifier', 0);
+          sizeModifierLink.tag('race', 'elf', 'size');
+          sizeModifierChainable.addLink(sizeModifierLink);
+          character.addChainable(sizeModifierChainable);
+        }
+      },
+      'gnome': {
+        sizeModifier: 1
+        apply: function(character) {
+          var sizeModifierChainable = new Chainable('size-modifier'),
+              sizeModifierLink = new util.StaticChainLink('size modifier', 1);
+          sizeModifierLink.tag('race', 'gnome', 'size');
+          sizeModifierChainable.addLink(sizeModifierLink);
+          character.addChainable(sizeModifierChainable);
+        }
+      },
+      'halfling': {
+        sizeModifier: 1
+        apply: function(character) {
+        }
+      },
+      'half-elf': {
+        apply: function(character) {
+        }
+      },
+      'half-orc': {
+        apply: function(character) {
+        }
+      }
+    };
+
+    function Race(name, sizeModifier) {
+      this.name = name;
+      this.sizeModifier = sizeModifier;
+    }
+
+    Race.prototype.applyToCharacter = function(character) {
+      var sizeModifierChainable = new Chainable('size-modifier'),
+          sizeModifierLink = new util.StaticChainLink('size modifier', this.sizeModifier);
+      sizeModifierLink.tag(this.name, 'race', 'size');
+      sizeModifierChainable.addLink(sizeModifierLink);
+      character.addChainable(sizeModifierChainable);
+    }
+
+    var classInfo = {
+      'barbarian': {
+        hitDie: 12
+      },
+      'bard': {
+        hitDie: 6
+      },
+      'cleric': {
+        hitDie: 8
+      },
+      'druid': {
+        hitDie: 8
+      },
+      'fighter': {
+        hitDie: 10
+      },
+      'monk': {
+        hitDie: 8
+      },
+      'paladin': {
+        hitDie: 10
+      },
+      'ranger': {
+        hitDie: 8
+      },
+      'rogue': {
+        hitDie: 6
+      },
+      'sorceror': {
+        hitDie: 4
+      },
+      'wizard': {
+        hitDie: 4
+      }
+    };
+
     /**
      * A chain link that accepts an ability score and outputs its
      * corresponding ability modifier.
@@ -714,13 +841,56 @@ var d20pal = (function() {
       return link;
     };
 
-    function DND35Character(name) {
+    function rollAbilityScores() {
+      return '123456'.split('').map(function() {
+        return util.Dice.highestOf('4d6', 3).reduce(function(p,c){return p+c;});
+      });
+    }
+
+    function DND35Character(name, race, _class) {
       Character.call(this, name);
+
+      if (race && raceInfo[race]) {
+        this.race = race;
+      }
+      if (_class && classInfo[_class]) {
+        this._class = class;
+      }
+
+      var strength         = new Chainable('strength'),
+          dexterity        = new Chainable('dexterity'),
+          constitution     = new Chainable('constitution'),
+          intelligence     = new Chainable('intelligence'),
+          wisdom           = new Chainable('wisdom'),
+          charisma         = new Chainable('charisma');
+
+      var score = new util.StaticChainLink('default ability score', 10);
+
+      strength.addLink(score);
+      dexterity.addLink(score);
+      constitution.addLink(score);
+      intelligence.addLink(score);
+      wisdom.addLink(score);
+      charisma.addLink(score);
+
+      var strengthmod      = new Chainable('strength-modifier', strength);
+      var dexteritymod     = new Chainable('dexterity-modifier', dexterity);
+      var intelligencemod  = new Chainable('intelligence-modifier', intelligence);
+      var constitutionmod  = new Chainable('constitution-modifier', constitution);
+      var wisdommod        = new Chainable('wisdom-modifier', wisdom);
+      var charismamod      = new Chainable('charisma-modifier', charisma);
+
+      var abilityModifier = new AbilityModifierChainLink();
+
+      strengthmod.addLink(abilityModifier);
+      dexteritymod.addLink(abilityModifier);
+      constitutionmod.addLink(abilityModifier);
+      intelligencemod.addLink(abilityModifier);
+      wisdommod.addLink(abilityModifier);
+      charismamod.addLink(abilityModifier);
 
       var hp = new Chainable('hp');
       var ac = new Chainable('ac');
-      hp.addLink(new util.StaticChainLink('default hp', 12));
-      ac.addLink(new util.StaticChainLink('default ac', 12));
 
       var fortitude = new Chainable('fortitude');
       var reflex = new Chainable('reflex');
@@ -730,40 +900,7 @@ var d20pal = (function() {
       reflex.addLink(new util.StaticChainLink('default reflex', 13));
       will.addLink(new util.StaticChainLink('default will', 13));
 
-      var strength         = new Chainable('strength');
-      var strengthmod      = new Chainable('strength-modifier', strength);
-      var dexterity        = new Chainable('dexterity');
-      var dexteritymod     = new Chainable('dexterity-modifier', dexterity);
-      var constitution     = new Chainable('constitution');
-      var constitutionmod  = new Chainable('constitution-modifier', constitution);
-      var intelligence     = new Chainable('intelligence');
-      var intelligencemod  = new Chainable('intelligence-modifier', intelligence);
-      var wisdom           = new Chainable('wisdom');
-      var wisdommod        = new Chainable('wisdom-modifier', wisdom);
-      var charisma         = new Chainable('charisma');
-      var charismamod      = new Chainable('charisma-modifier', charisma);
-
-      var abilityModifier = new AbilityModifierChainLink(),
-          defaultAbilityScore = new util.StaticChainLink('default ability score', 10),
-          doubler = new util.MultiplierChainLink('doubler', 2);
-
-      strength.addLink(defaultAbilityScore);
-      strengthmod.addLink(abilityModifier);
-      dexterity.addLink(defaultAbilityScore);
-      dexteritymod.addLink(abilityModifier);
-      constitution.addLink(defaultAbilityScore);
-      constitutionmod.addLink(abilityModifier);
-      intelligence.addLink(defaultAbilityScore);
-      intelligencemod.addLink(abilityModifier);
-      wisdom.addLink(defaultAbilityScore);
-      wisdommod.addLink(abilityModifier);
-      charisma.addLink(/*defaultAbilityScore*/new util.StaticChainLink('default charisma', 15));
-      charismamod.addLink(abilityModifier);
-      charismamod.addLink(doubler, 200); // TODO: remove, this is only for testing
-
       var initiative = new Chainable('initiative', dexterity);
-      var testchain = new Chainable('bleeeeh');
-      testchain.addLink(new util.StaticChainLink('ble', 15));
 
       this.chainables = [
         hp, ac, initiative,
@@ -773,15 +910,26 @@ var d20pal = (function() {
         intelligence, intelligencemod,
         wisdom, wisdommod,
         charisma, charismamod,
-        fortitude, reflex, will,
-        testchain
+        fortitude, reflex, will
       ];
     }
     DND35Character.prototype = Object.create(Character.prototype);
     DND35Character.prototype.constructor = DND35Character;
 
+    function generateCharacter(params) {
+      var defaults = {
+        name:   'New Character',
+        race:   null,
+        _class: null,
+        reRoll: true
+      };
+
+      params = extend(defaults, params);
+    }
+
     return {
       DND35Character: DND35Character,
+      generateCharacter: generateCharacter,
       AbilityModifierChainLink: AbilityModifierChainLink
     };
   })();
