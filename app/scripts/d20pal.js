@@ -422,7 +422,7 @@ var d20pal = (function() {
     AdderChainLink.fromRepresentation = function(rep, character) {
       var name = null;
       if (rep.type === 'static') {
-        name = addend.toString() + ' adder';
+        name = rep.addend.toString() + ' adder';
       } else if (rep.type === 'dynamic') {
         name = rep.addend.name + ' adder';
       }
@@ -735,14 +735,16 @@ var d20pal = (function() {
     function Class(name, hitDie) {
       this.name = name;
       this.hitDie = new util.Dice('d' + hitDie);
+      console.log(this.hitDie. hitDie);
     }
 
     Class.prototype.applyToCharacter = function(character) {
-      var initialHealth = this.hitDie.numsides +
-                          character.getChainableByName('constitution-modifier').getFinal(),
-          initialHealthLink = new util.StaticChainLink('initial health', initialHealth);
-
-      character.getChainableByName('hp').addLink(initialHealthLink);
+      var maxHitDie = new util.AdderChainLink('max hit die', this.hitDie.numsides),
+          consMod   = new util.AdderChainLink('constitution modifier', 'constitution-modifier', character),
+          hp = character.getChainableByName('hp'); 
+      
+      hp.addLink(maxHitDie);
+      hp.addLink(consMod);
     };
 
     var human     = new Race('human', 0),
@@ -809,42 +811,20 @@ var d20pal = (function() {
           wisdom           = new Chainable('wisdom'),
           charisma         = new Chainable('charisma');
 
-      var score = new util.StaticChainLink('default ability score', 10);
+      var strengthmod      = new Chainable('strength-modifier', strength),
+          dexteritymod     = new Chainable('dexterity-modifier', dexterity),
+          intelligencemod  = new Chainable('intelligence-modifier', intelligence),
+          constitutionmod  = new Chainable('constitution-modifier', constitution),
+          wisdommod        = new Chainable('wisdom-modifier', wisdom),
+          charismamod      = new Chainable('charisma-modifier', charisma);
+    
+      var hp = new Chainable('hp'),
+          ac = new Chainable('ac');
 
-      strength.addLink(score);
-      dexterity.addLink(score);
-      constitution.addLink(score);
-      intelligence.addLink(score);
-      wisdom.addLink(score);
-      charisma.addLink(score);
-
-      var strengthmod      = new Chainable('strength-modifier', strength);
-      var dexteritymod     = new Chainable('dexterity-modifier', dexterity);
-      var intelligencemod  = new Chainable('intelligence-modifier', intelligence);
-      var constitutionmod  = new Chainable('constitution-modifier', constitution);
-      var wisdommod        = new Chainable('wisdom-modifier', wisdom);
-      var charismamod      = new Chainable('charisma-modifier', charisma);
-
-      var abilityModifier = new AbilityModifierChainLink();
-
-      strengthmod.addLink(abilityModifier);
-      dexteritymod.addLink(abilityModifier);
-      constitutionmod.addLink(abilityModifier);
-      intelligencemod.addLink(abilityModifier);
-      wisdommod.addLink(abilityModifier);
-      charismamod.addLink(abilityModifier);
-
-      var hp = new Chainable('hp');
-      var ac = new Chainable('ac');
-
-      var fortitude = new Chainable('fortitude');
-      var reflex = new Chainable('reflex');
-      var will = new Chainable('will');
-
-      fortitude.addLink(new util.StaticChainLink('default fortitude', 13));
-      reflex.addLink(new util.StaticChainLink('default reflex', 13));
-      will.addLink(new util.StaticChainLink('default will', 13));
-
+      var fortitude = new Chainable('fortitude'),
+          reflex = new Chainable('reflex'),
+          will = new Chainable('will');
+    
       var initiative = new Chainable('initiative', dexterity);
 
       this.chainables = [
@@ -857,6 +837,35 @@ var d20pal = (function() {
         charisma, charismamod,
         fortitude, reflex, will
       ];
+
+
+      var score = new util.StaticChainLink('default ability score', 10);
+
+      strength.addLink(score);
+      dexterity.addLink(score);
+      constitution.addLink(score);
+      intelligence.addLink(score);
+      wisdom.addLink(score);
+      charisma.addLink(score);
+
+      var abilityModifier = new AbilityModifierChainLink();
+
+      strengthmod.addLink(abilityModifier);
+      dexteritymod.addLink(abilityModifier);
+      constitutionmod.addLink(abilityModifier);
+      intelligencemod.addLink(abilityModifier);
+      wisdommod.addLink(abilityModifier);
+      charismamod.addLink(abilityModifier);
+
+      ac.addLink(new util.StaticChainLink('initial ac', 10));
+      ac.addLink(new util.AdderChainLink('armor bonus', 'armor-bonus', this));
+      ac.addLink(new util.AdderChainLink('shield bonus', 'shield-bonus', this));
+      ac.addLink(new util.AdderChainLink('size modifier', 'size-modifier', this));
+      ac.addLink(new util.AdderChainLink('dexterity modifier', 'dexterity-modifier', this));
+
+      fortitude.addLink(new util.StaticChainLink('default fortitude', 13));
+      reflex.addLink(new util.StaticChainLink('default reflex', 13));
+      will.addLink(new util.StaticChainLink('default will', 13));
 
       this.race.applyToCharacter(this);
       this._class.applyToCharacter(this);
