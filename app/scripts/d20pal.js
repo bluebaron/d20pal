@@ -716,57 +716,9 @@ var d20pal = (function() {
    * @memberof module:d20pal
    */
   var dnd35 = (function() {
-    var raceInfo = {
-      'human': {
-        apply: function(character) {
-          var sizeModifierChainable = new Chainable('size-modifier'),
-              sizeModifierLink = new util.StaticChainLink('size modifier', 0);
-          sizeModifierLink.tag('race', 'human', 'size');
-          sizeModifierChainable.addLink(sizeModifierLink);
-          character.addChainable(sizeModifierChainable);
-        }
-      },
-      'dwarf': {
-        apply: function(character) {
-          var sizeModifierChainable = new Chainable('size-modifier'),
-              sizeModifierLink = new util.StaticChainLink('size modifier', 0);
-          sizeModifierLink.tag('race', 'dwarf', 'size');
-          sizeModifierChainable.addLink(sizeModifierLink);
-          character.addChainable(sizeModifierChainable);
-        }
-      'elf': {
-        apply: function(character) {
-          var sizeModifierChainable = new Chainable('size-modifier'),
-              sizeModifierLink = new util.StaticChainLink('size modifier', 0);
-          sizeModifierLink.tag('race', 'elf', 'size');
-          sizeModifierChainable.addLink(sizeModifierLink);
-          character.addChainable(sizeModifierChainable);
-        }
-      },
-      'gnome': {
-        sizeModifier: 1
-        apply: function(character) {
-          var sizeModifierChainable = new Chainable('size-modifier'),
-              sizeModifierLink = new util.StaticChainLink('size modifier', 1);
-          sizeModifierLink.tag('race', 'gnome', 'size');
-          sizeModifierChainable.addLink(sizeModifierLink);
-          character.addChainable(sizeModifierChainable);
-        }
-      },
-      'halfling': {
-        sizeModifier: 1
-        apply: function(character) {
-        }
-      },
-      'half-elf': {
-        apply: function(character) {
-        }
-      },
-      'half-orc': {
-        apply: function(character) {
-        }
-      }
-    };
+    function randomFrom(arr) {
+      return arr[Math.floor(Math.random()*arr.length)];
+    }
 
     function Race(name, sizeModifier) {
       this.name = name;
@@ -779,43 +731,41 @@ var d20pal = (function() {
       sizeModifierLink.tag(this.name, 'race', 'size');
       sizeModifierChainable.addLink(sizeModifierLink);
       character.addChainable(sizeModifierChainable);
+    };
+
+    function Class(name, hitDie) {
+      this.name = name;
+      this.hitDie = new util.Dice('d' + hitDie);
     }
 
-    var classInfo = {
-      'barbarian': {
-        hitDie: 12
-      },
-      'bard': {
-        hitDie: 6
-      },
-      'cleric': {
-        hitDie: 8
-      },
-      'druid': {
-        hitDie: 8
-      },
-      'fighter': {
-        hitDie: 10
-      },
-      'monk': {
-        hitDie: 8
-      },
-      'paladin': {
-        hitDie: 10
-      },
-      'ranger': {
-        hitDie: 8
-      },
-      'rogue': {
-        hitDie: 6
-      },
-      'sorceror': {
-        hitDie: 4
-      },
-      'wizard': {
-        hitDie: 4
-      }
+    Class.prototype.applyToCharacter = function(character) {
+      var initialHealth = this.hitDie.numsides +
+                          character.getChainableByName('constitution-modifier').getFinal(),
+          initialHealthLink = new util.StaticChainLink('initial health', initialHealth);
+
+      character.getChainableByName('hp').addLink(initialHealthLink);
     };
+
+    var human     = new Race('human', 0),
+        dwarf     = new Race('dwarf', 0),
+        elf       = new Race('elf', 0),
+        gnome     = new Race('gnome', 1),
+        halfElf   = new Race('half-elf', 0),
+        halfOrc   = new Race('half-orc', 0),
+        halfling  = new Race('halfling', 1);
+
+    var barbarian = new Class('barbarian', 12),
+        bard      = new Class('bard', 6),
+        cleric    = new Class('cleric', 8),
+        druid     = new Class('druid', 8),
+        fighter   = new Class('fighter', 10),
+        monk      = new Class('monk', 8),
+        paladin   = new Class('paladin', 10),
+        ranger    = new Class('ranger', 8),
+        rogue     = new Class('rogue', 6),
+        sorceror  = new Class('sorceror', 4),
+        wizard    = new Class('wizard', 4);
+
 
     /**
      * A chain link that accepts an ability score and outputs its
@@ -850,12 +800,8 @@ var d20pal = (function() {
     function DND35Character(name, race, _class) {
       Character.call(this, name);
 
-      if (race && raceInfo[race]) {
-        this.race = race;
-      }
-      if (_class && classInfo[_class]) {
-        this._class = class;
-      }
+      this.race = race ? race : human;
+      this._class = _class ? _class : barbarian;
 
       var strength         = new Chainable('strength'),
           dexterity        = new Chainable('dexterity'),
@@ -912,6 +858,9 @@ var d20pal = (function() {
         charisma, charismamod,
         fortitude, reflex, will
       ];
+
+      this.race.applyToCharacter(this);
+      this._class.applyToCharacter(this);
     }
     DND35Character.prototype = Object.create(Character.prototype);
     DND35Character.prototype.constructor = DND35Character;
