@@ -207,9 +207,33 @@ var d20pal = (function() {
      */
     function Dice(dicestr) {
       this.dicestr = dicestr;
+      this.numdice = null;
+      this.numsides = null;
+      this.addend = null;
+
+      this.parse();
     }
 
-    Dice.prototype.roll = function() {
+    Dice.parse = function (dicestr) {
+      var res = dicestr.match(/(\d*)d(\d+)((\+|-)(\d+))?/);
+      if (res === null) {
+        return false;
+      }
+      var numdice   = parseInt(res[1]),
+          numsides  = parseInt(res[2]),
+          addend    = res[3]?parseInt(res[3]):null;
+      if (!(numdice && numsides)) {
+        return false;
+      }
+      
+      return {
+        numdice:  numdice,
+        numsides: numsides,
+        addend:   addend
+      };
+    };
+
+    Dice.prototype.parse = function (dicestr) {
       var res = this.dicestr.match(/(\d*)d(\d+)((\+|-)(\d+))?/);
       if (res === null) {
         return false;
@@ -221,17 +245,46 @@ var d20pal = (function() {
         return false;
       }
 
+      this.numdice = numdice;
+      this.numsides = numsides;
+      this.addend = addend;
+      
+      return {
+        numdice:  numdice,
+        numsides: numsides,
+        addend:   addend
+      };
+    };
+
+    Dice.roll = function(dicestr) {
+      var res = Dice.parse(dicestr);
+
       var total = 0;
-      for (var i = 0; i < numdice; i++) {
-        var rolledvalue = Math.floor(Math.random() * numsides);
+      for (var i = 0; i < res.numdice; i++) {
+        var rolledvalue = Math.floor(Math.random() * res.numsides) + 1;
         total += rolledvalue;
       }
 
-      if (addend) {
-        total += addend;
+      if (res.addend) {
+        total += res.addend;
       }
 
       return total;
+    };
+
+    Dice.highestOf = function(dicestr, num) {
+      var results = [],
+          dice = new Dice(dicestr);
+
+      for (var i = 0; i < dice.numdice; i++) {
+        results.push(dice.roll());
+      }
+
+      return results.sort(function(a,b){return a>b;}).slice(-num);
+    };
+
+    Dice.prototype.roll = function() {
+      return Dice.roll(this.dicestr);
     };
 
     /**
