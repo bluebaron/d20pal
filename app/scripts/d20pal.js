@@ -434,12 +434,10 @@ var d20pal = (function() {
             callback = missingChainCallback;
           } else {
             callback = existingChainCallback;
-            console.log('here');
           }
         } else if (this.addend instanceof Chainable) { // Dynamic given chainable
           chain = this.addend;
           callback = existingChainCallback;
-          console.log('here2');
         }
 
         this.tag('dynamic-adder');
@@ -859,12 +857,17 @@ var d20pal = (function() {
       var abilityModifier = new AbilityModifierChainLink();
 
       strengthmod.addLink(new util.AdderChainLink(strength, this));
-      strengthmod.addLink(abilityModifier, this);
+      strengthmod.addLink(abilityModifier);
       dexteritymod.addLink(new util.AdderChainLink(dexterity, this));
+      dexteritymod.addLink(abilityModifier);
       constitutionmod.addLink(new util.AdderChainLink(constitution, this));
+      constitutionmod.addLink(abilityModifier);
       intelligencemod.addLink(new util.AdderChainLink(intelligence, this));
+      intelligencemod.addLink(abilityModifier);
       wisdommod.addLink(new util.AdderChainLink(wisdom, this));
+      wisdommod.addLink(abilityModifier);
       charismamod.addLink(new util.AdderChainLink(charisma, this));
+      charismamod.addLink(abilityModifier);
 
       ac.addLink(new util.StaticChainLink('initial ac', 10));
       ac.addLink(new util.AdderChainLink('armor bonus', 'armor-bonus', this));
