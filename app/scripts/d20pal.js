@@ -427,7 +427,6 @@ var d20pal = (function() {
               if (!chain) {
                 return oldVal;
               } else {
-                console.log(callback);
                 that.modifierCallback = existingChainCallback;
                 return oldVal + chain.getFinal();
               }
