@@ -428,7 +428,7 @@ var d20pal = (function() {
       if (rep.type === 'static') {
         name = rep.addend.toString() + ' adder';
       } else if (rep.type === 'dynamic') {
-        name = rep.addend.name + ' adder';
+        name = rep.addend + ' adder';
       }
 
       return new AdderChainLink(name, rep.addend, character);
@@ -739,7 +739,6 @@ var d20pal = (function() {
     function Class(name, hitDie) {
       this.name = name;
       this.hitDie = new util.Dice('d' + hitDie);
-      console.log(this.hitDie. hitDie);
     }
 
     Class.prototype.applyToCharacter = function(character) {

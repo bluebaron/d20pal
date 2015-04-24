@@ -55,43 +55,54 @@
       </tr>
     </table>
   </div>
-  <div class="col-sm-3" id="chainlinks">
-    <ul>
-      <li ng-hide="(selectedChainable.startChain === null)">
-        {{selectedChainable.startChain.name}}
-        <span class="chainlinkresult">{{selectedChainable.startChain.getFinal()}}</span>
-      </li>
-      <li ng-repeat="tuple in selectedChainable.chainTuples">
-        {{tuple[0].name}}
-        <span class="chainlinkresult">{{tuple[2]}}</span>
-      </li>
-      <li id="chain-link-management">
-        <div id="add-container">
-          <button ng-click="addChainLink()">
-            <span class="glyphicon glyphicon-plus"></span>
-          </button>
-          <div id="new-chain-link-type">
-            <select ng-model="newChainLinkType" ng-options="link.typeName for link in addableChainLinkTypes">
-              <option disabled selected style="display:none" value="">link type</option>
-            </select>
-          </div>
-          <div id="new-chain-link-props">
-            <div ng-repeat="prop in newChainLinkType.props | filter:isShown">
-              {{prop.name}}:
-              <input type="number"
-                ng-if="prop.type === 'number'"
-                ng-model="prop.value"
-                class="number"
-                placeholder="#">
-              <input type="text"
-                ng-if="prop.type === 'text'"
-                ng-model="prop.value"
-                class="text">
+  <div class="col-sm-3">
+    <div id="chainable-settings">
+      <div id="chainable-start-chain">
+        <select
+          ng-options="chainable.name for chainable in selectedCharacter.chainables"
+          ng-model="selectedChainable.startChain">
+          <option value="">start chain (none)</option>
+        </select>
+      </div>
+    </div>
+    <div id="chainlinks">
+      <ul>
+        <li ng-hide="(selectedChainable.startChain === null)">
+          {{selectedChainable.startChain.name}}
+          <span class="chainlinkresult">{{selectedChainable.startChain.getFinal()}}</span>
+        </li>
+        <li ng-repeat="tuple in selectedChainable.chainTuples">
+          {{tuple[0].name}}
+          <span class="chainlinkresult">{{tuple[2]}}</span>
+        </li>
+        <li id="chain-link-management">
+          <div id="add-container">
+            <button ng-click="addChainLink()">
+              <span class="glyphicon glyphicon-plus"></span>
+            </button>
+            <div id="new-chain-link-type">
+              <select ng-model="newChainLinkType" ng-options="link.typeName for link in addableChainLinkTypes">
+                <option disabled selected style="display:none" value="">link type</option>
+              </select>
+            </div>
+            <div id="new-chain-link-props">
+              <div ng-repeat="prop in newChainLinkType.props | filter:isShown">
+                {{prop.name}}:
+                <input type="number"
+                  ng-if="prop.type === 'number'"
+                  ng-model="prop.value"
+                  class="number"
+                  placeholder="#">
+                <input type="text"
+                  ng-if="prop.type === 'text'"
+                  ng-model="prop.value"
+                  class="text">
+              </div>
             </div>
           </div>
-        </div>
-      </li>
-    </ul>
+        </li>
+      </ul>
+    </div>
   </div>
   <div class="col-sm-3">
   &nbsp;

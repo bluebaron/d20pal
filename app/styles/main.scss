@@ -7,18 +7,8 @@ body {
   padding: 0;
 }
 
-/* Everything but the jumbotron gets side spacing for mobile first views */
-.header,
-.footer {
-  padding-left: 15px;
-  padding-right: 15px;
-}
-
 /* Custom page header */
 .header {
-  border-bottom: 1px solid #e5e5e5;
-  margin-bottom: 10px;
-
   /* Make the masthead heading the same height as the navigation */
   h3 {
     margin-top: 0;
@@ -30,7 +20,7 @@ body {
 
 /* Custom page footer */
 .footer {
-  padding-top: 19px;
+  padding-top: 10px;
   color: #777;
   border-top: 1px solid #e5e5e5;
 }
@@ -57,7 +47,7 @@ body {
   color: $chrome-color;
 
   > select {
-    width: 200px;
+    width: 200%;
     padding: 0;
     border: none;
     background-color: transparent;
@@ -126,6 +116,8 @@ $infopanel-chrome-color: #111;
   }
 
   > #character-options-buttons {
+    overflow: hidden;
+
     > .character-option {
       @include modal-free-button;
       font-size: 20px;
@@ -204,6 +196,7 @@ $ratings: good better great awesome;
   $table-row-height: 30px;
 
   width: 100%;
+  margin-bottom: 10px;
 
   > tbody {
     > tr {
@@ -316,6 +309,12 @@ $ratings: good better great awesome;
 //////////////////////////////////////////////////
 // ChainLink section styles
 //////////////////////////////////////////////////
+
+#chainable-settings {
+  #chainable-start-chain {
+    @include flat-select($infopanel-chrome-color);
+  }
+}
 
 #chainlinks {
   $arrow-body-height: 30px;

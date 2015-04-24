@@ -190,7 +190,7 @@ angular.module('d20palApp')
     };
     
     //////////////////////////////////////////////////
-    // Chain management
+    // Chain Management
     //////////////////////////////////////////////////
     $scope.selectedChainable = null;
 
