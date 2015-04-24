@@ -261,6 +261,8 @@ angular.module('d20palApp')
       var newlink = $scope.newChainLinkType.$constructor.fromRepresentation(args, $scope.selectedCharacter);
       $scope.selectedChainable.addLink(newlink);
     };
+    
+    window.testing = $scope;
 
     $scope.addNewChainable = function() {
       if ($scope.newChainableName && $scope.newChainableName.length > 0) {

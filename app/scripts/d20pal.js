@@ -427,7 +427,9 @@ var d20pal = (function() {
               if (!chain) {
                 return oldVal;
               } else {
-                callback = existingChainCallback;
+                console.log(callback);
+                that.modifierCallback = existingChainCallback;
+                return oldVal + chain.getFinal();
               }
             };
 
@@ -543,17 +545,22 @@ var d20pal = (function() {
         this.chainTuples.push([newLink, priority, null]);
       }
 
-      for (var i = 0; i < this.chainTuples.length; i++) {
-        if (priority > this.chainTuples[i][1]) {
+      for (var i = 0; i < this.chainTuples.length + 1; i++) {
+        if (i === this.chainTuples.length) {
+          this.chainTuples.push([newLink, priority, null]);
+          break;
+        } else if (priority > this.chainTuples[i][1]) {
           continue;
         } else if (priority < this.chainTuples[i][1]) {
           this.chainTuples.splice(i, 0, [newLink, priority, null]);
+          break;
         } else {
           var j = i;
           while (this.chainTuples[j][1] === priority - 1) {
             priority -= 1;
             j -= 1;
           }
+          break;
         }
       }
     }
@@ -749,7 +756,7 @@ var d20pal = (function() {
 
     Class.prototype.applyToCharacter = function(character) {
       var maxHitDie = new util.AdderChainLink('max hit die', this.hitDie.numsides, character),
-          consMod   = new util.AdderChainLink('constitution modifier', 'constitution-modifier', character),
+          consMod   = new util.AdderChainLink('constitution-modifier', character),
           hp = character.getChainableByName('hp'); 
       
       hp.addLink(maxHitDie);

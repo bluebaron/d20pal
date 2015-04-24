@@ -10,3 +10,4 @@ Todo
 *   Make everything more encapsulated
 *   Write some friggin unit tests
 *   Figure out why character paste box will not animate
+*   Change character view so a subset of the chainables are displayed in the infopanel ('display chainables')
