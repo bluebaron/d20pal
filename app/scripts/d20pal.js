@@ -385,32 +385,36 @@ var d20pal = (function() {
     };
 
     function AdderChainLink(name, addend, character) {
-      if (arguments.length < 3) {
-        this.name = name.name;
-        this.addend = name;
-        this.character = addend;
-        name = name.name;
-      } else {
-        this.name = name;
+      if (arguments.length === 3) { // name, addend, character
         this.addend = addend;
         this.character = character;
+      } else if (arguments.length === 2) { // addend, character
+        this.addend = arguments[0];
+        this.character = arguments[1];
+        if (typeof this.addend === 'number') {
+          name = this.addend.toString() + ' adder';
+        } else if (this.addend instanceof Chainable) {
+          name = this.addend.name;
+        } else {
+          name = this.addend.replace('-', ' ');
+        }
       }
 
-      var callback = null;
+      var callback = null,
+          that = this;
 
-      if (typeof addend === 'number') { // Addend is just a number
+      if (typeof this.addend === 'number') { // Addend is just a number
         callback = function(oldVal) {
           if (!oldVal) {
-            return addend;
+            return that.addend;
           } else {
-            return oldVal + addend;
+            return oldVal + that.addend;
           }
         };
 
         this.tag('static-adder');
       } else { // Dynamic addend
-        var that = this,
-            chain = null,
+        var chain = null,
             existingChainCallback = function(oldVal, params) {
               if (!oldVal) {
                 return chain.getFinal();
@@ -421,7 +425,7 @@ var d20pal = (function() {
             missingChainCallback = function(oldVal, params) {
               chain = that.character.getChainableByName(that.addend);
               if (!chain) {
-                return null;
+                return oldVal;
               } else {
                 callback = existingChainCallback;
               }
@@ -438,9 +442,8 @@ var d20pal = (function() {
         } else if (this.addend instanceof Chainable) { // Dynamic given chainable
           chain = this.addend;
           callback = existingChainCallback;
+          this.tag('dynamic-adder');
         }
-
-        this.tag('dynamic-adder');
       }
 
       ChainLink.call(this, name, callback);
@@ -745,7 +748,7 @@ var d20pal = (function() {
     }
 
     Class.prototype.applyToCharacter = function(character) {
-      var maxHitDie = new util.AdderChainLink('max hit die', this.hitDie.numsides),
+      var maxHitDie = new util.AdderChainLink('max hit die', this.hitDie.numsides, character),
           consMod   = new util.AdderChainLink('constitution modifier', 'constitution-modifier', character),
           hp = character.getChainableByName('hp'); 
       
@@ -832,7 +835,6 @@ var d20pal = (function() {
           will = new Chainable('will');
     
       var initiative = new Chainable('initiative');
-      initiative.addLink(new util.AdderChainLink(dexteritymod));
 
       this.chainables = [
         hp, ac, initiative,
@@ -870,14 +872,16 @@ var d20pal = (function() {
       charismamod.addLink(abilityModifier);
 
       ac.addLink(new util.StaticChainLink('initial ac', 10));
-      ac.addLink(new util.AdderChainLink('armor bonus', 'armor-bonus', this));
-      ac.addLink(new util.AdderChainLink('shield bonus', 'shield-bonus', this));
-      ac.addLink(new util.AdderChainLink('size modifier', 'size-modifier', this));
-      ac.addLink(new util.AdderChainLink('dexterity modifier', 'dexterity-modifier', this));
+      ac.addLink(new util.AdderChainLink('armor-bonus', this));
+      ac.addLink(new util.AdderChainLink('shield-bonus', this));
+      ac.addLink(new util.AdderChainLink('size-modifier', this));
+      ac.addLink(new util.AdderChainLink('dexterity-modifier', this));
 
       fortitude.addLink(new util.StaticChainLink('default fortitude', 13));
       reflex.addLink(new util.StaticChainLink('default reflex', 13));
       will.addLink(new util.StaticChainLink('default will', 13));
+
+      initiative.addLink(new util.AdderChainLink(dexteritymod, this));
 
       this.race.applyToCharacter(this);
       this._class.applyToCharacter(this);

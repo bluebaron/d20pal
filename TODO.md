@@ -8,3 +8,5 @@ Todo
 *   Make registerType register type tags as well so they can be omitted in JSON format if their type is known
 *   Include doc generation in Gruntfile
 *   Make everything more encapsulated
+*   Write some friggin unit tests
+*   Figure out why character paste box will not animate
