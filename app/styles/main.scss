@@ -311,9 +311,6 @@ $ratings: good better great awesome;
 //////////////////////////////////////////////////
 
 #chainable-settings {
-  #chainable-start-chain {
-    @include flat-select($infopanel-chrome-color);
-  }
 }
 
 #chainlinks {

@@ -110,10 +110,10 @@ var d20pal = (function() {
    * link will simply return the value, no matter what the arguments are.
    * @memberof module:d20pal
    */
-  var ChainLink = function(name, modifierCallback) {
+  function ChainLink(name, modifierCallback) {
     this.name = name || 'chainlink';
     this.modifierCallback = modifierCallback || function(){return null;};
-  };
+  }
 
   /**
    * Evaluates the link's callback on the supplied value and returns the
@@ -159,8 +159,9 @@ var d20pal = (function() {
   };
 
   ChainLink.fromRepresentation = function(rep, character) {
+    // res is all registered types whose names were found in rep's tags
     var type = 'default',
-        res = ChainLink.types.filter(function(type) {
+        res = ChainLink.types.filter(function(type) { 
           return rep.tags.indexOf(type.name) !== -1;
         }),
         chainlink = null;
@@ -384,24 +385,63 @@ var d20pal = (function() {
     };
 
     function AdderChainLink(name, addend, character) {
-      this.addend = addend;
-      this.character = character;
+      if (arguments.length < 3) {
+        this.name = name.name;
+        this.addend = name;
+        this.character = addend;
+        name = name.name;
+      } else {
+        this.name = name;
+        this.addend = addend;
+        this.character = character;
+      }
+
       var callback = null;
+
       if (typeof addend === 'number') { // Addend is just a number
         callback = function(oldVal) {
-          return oldVal + addend;
-        };
-        this.tag('static-adder');
-      } else if (typeof addend === 'string') { // Dynamic addend
-        var that = this;
-        callback = function(oldVal, params) {
-          var chain = that.character.getChainableByName(that.addend);
-          if (!chain) {
-            return oldVal;
+          if (!oldVal) {
+            return addend;
           } else {
-            return oldVal + chain.getFinal();
+            return oldVal + addend;
           }
         };
+
+        this.tag('static-adder');
+      } else { // Dynamic addend
+        var that = this,
+            chain = null,
+            existingChainCallback = function(oldVal, params) {
+              if (!oldVal) {
+                return chain.getFinal();
+              } else {
+                return oldVal + chain.getFinal();
+              }
+            },
+            missingChainCallback = function(oldVal, params) {
+              chain = that.character.getChainableByName(that.addend);
+              if (!chain) {
+                return null;
+              } else {
+                callback = existingChainCallback;
+              }
+            };
+
+        if (typeof this.addend === 'string') { // Dynamic specified by name
+          chain = this.character.getChainableByName(this.addend);
+          
+          if (!chain) {
+            callback = missingChainCallback;
+          } else {
+            callback = existingChainCallback;
+            console.log('here');
+          }
+        } else if (this.addend instanceof Chainable) { // Dynamic given chainable
+          chain = this.addend;
+          callback = existingChainCallback;
+          console.log('here2');
+        }
+
         this.tag('dynamic-adder');
       }
 
@@ -414,24 +454,26 @@ var d20pal = (function() {
 
     AdderChainLink.prototype.getRepresentation = function() {
       var rep = ChainLink.prototype.getRepresentation.call(this);
-      if (this.isTagged('dynamic-adder')) {
-        rep.type = 'dynamic';
+
+      if (this.addend instanceof Chainable) {
+        rep.addend = this.addend.name;
+
+        if (rep.name === this.addend.name) {
+          delete rep.name;
+        }
       } else {
-        rep.type = 'static';
+        rep.addend = this.addend;
       }
 
-      rep.addend = this.addend;
+      return rep;
     };
 
     AdderChainLink.fromRepresentation = function(rep, character) {
-      var name = null;
-      if (rep.type === 'static') {
-        name = rep.addend.toString() + ' adder';
-      } else if (rep.type === 'dynamic') {
-        name = rep.addend + ' adder';
+      if (rep.name) {
+        return new AdderChainLink(rep.name, rep.addend, character);
+      } else {
+        return new AdderChainLink(rep.addend, character);
       }
-
-      return new AdderChainLink(name, rep.addend, character);
     };
 
     return {
@@ -459,16 +501,15 @@ var d20pal = (function() {
    * order determined by each link's priority.
    * @memberof module:d20pal
    */
-  var Chainable = function(name, startChain) {
+  function Chainable(name) {
     //console.log('Instantiating Chainable ' + name + '.');
     this.name = name || 'chainable';
-    this.startChain = startChain || null;
 
     // [0] = ChainLink object
     // [1] = Priority
     // [2] = Partial evaluation of chain following this link
     this.chainTuples = [];
-  };
+  }
 
   Chainable.priorityRankIncrement = 100;
 
@@ -531,9 +572,7 @@ var d20pal = (function() {
    */
   Chainable.prototype.getFinal = function(params) {
     var curVal = null;
-    if (this.startChain) {
-      curVal = this.startChain.getFinal(params);
-    }
+
     this.chainTuples.forEach(function(tuple) {
       curVal = tuple[0].evaluate(curVal, params);
       tuple[2] = curVal;
@@ -561,53 +600,19 @@ var d20pal = (function() {
       chainTuples: chainTupleRepresentations
     };
 
-    if (this.startChain) {
-      obj.startChain = this.startChain.name;
-    }
-
     return obj;
   };
 
-  Chainable.fromRepresentation = (function() {
-    // function-local static
-    var neededStartChains = [];
+  Chainable.fromRepresentation = function(rep, character) {
+    var chain = new Chainable(rep.name);
 
-    return function(rep, character) {
-      var chain = null;
+    rep.chainTuples.forEach(function(tuple) {
+      var chainLink = ChainLink.fromRepresentation(tuple[0], character);
+      chain.addLink(chainLink, tuple[1]);
+    });
 
-      if (rep.startChain) { // startChain is not yet loaded
-        var startChain = character.getChainableByName(rep.startChain);
-
-        if (!startChain) {
-          if (neededStartChains[rep.name]) {
-            neededStartChains[rep.name].push(rep);
-          } else {
-            neededStartChains[rep.name] = [rep];
-          }
-
-          chain = new Chainable(rep.name);
-        } else { // Character already has startChain
-          chain = new Chainable(rep.name, startChain);
-        }
-      } else { // no startChain necessary
-        chain = new Chainable(rep.name);
-
-        if (neededStartChains[rep.name]) {
-          neededStartChains[rep.name].forEach(function(chainMissingStart) {
-            console.log('hey');
-            chainMissingStart.startChain = chain;
-          });
-        }
-      }
-
-      rep.chainTuples.forEach(function(tuple) {
-        var chainLink = ChainLink.fromRepresentation(tuple[0], character);
-        chain.addLink(chainLink, tuple[1]);
-      });
-
-      return chain;
-    };
-  })();
+    return chain;
+  };
 
   // End of Chainable class
 
@@ -619,10 +624,10 @@ var d20pal = (function() {
    * @mixes module:d20pal.Taggable
    * @memberof module:d20pal
    */
-  var Character = function(name) {
+  function Character(name) {
     this.name = name || 'New Character';
     this.tag('character');
-  };
+  }
 
   /**
    * Changes a character's name.
@@ -814,12 +819,12 @@ var d20pal = (function() {
           wisdom           = new Chainable('wisdom'),
           charisma         = new Chainable('charisma');
 
-      var strengthmod      = new Chainable('strength-modifier', strength),
-          dexteritymod     = new Chainable('dexterity-modifier', dexterity),
-          intelligencemod  = new Chainable('intelligence-modifier', intelligence),
-          constitutionmod  = new Chainable('constitution-modifier', constitution),
-          wisdommod        = new Chainable('wisdom-modifier', wisdom),
-          charismamod      = new Chainable('charisma-modifier', charisma);
+      var strengthmod      = new Chainable('strength-modifier'),
+          dexteritymod     = new Chainable('dexterity-modifier'),
+          intelligencemod  = new Chainable('intelligence-modifier'),
+          constitutionmod  = new Chainable('constitution-modifier'),
+          wisdommod        = new Chainable('wisdom-modifier'),
+          charismamod      = new Chainable('charisma-modifier');
     
       var hp = new Chainable('hp'),
           ac = new Chainable('ac');
@@ -828,7 +833,8 @@ var d20pal = (function() {
           reflex = new Chainable('reflex'),
           will = new Chainable('will');
     
-      var initiative = new Chainable('initiative', dexterity);
+      var initiative = new Chainable('initiative');
+      initiative.addLink(new util.AdderChainLink(dexteritymod));
 
       this.chainables = [
         hp, ac, initiative,
@@ -841,7 +847,6 @@ var d20pal = (function() {
         fortitude, reflex, will
       ];
 
-
       var score = new util.StaticChainLink('default ability score', 10);
 
       strength.addLink(score);
@@ -853,12 +858,13 @@ var d20pal = (function() {
 
       var abilityModifier = new AbilityModifierChainLink();
 
-      strengthmod.addLink(abilityModifier);
-      dexteritymod.addLink(abilityModifier);
-      constitutionmod.addLink(abilityModifier);
-      intelligencemod.addLink(abilityModifier);
-      wisdommod.addLink(abilityModifier);
-      charismamod.addLink(abilityModifier);
+      strengthmod.addLink(new util.AdderChainLink(strength, this));
+      strengthmod.addLink(abilityModifier, this);
+      dexteritymod.addLink(new util.AdderChainLink(dexterity, this));
+      constitutionmod.addLink(new util.AdderChainLink(constitution, this));
+      intelligencemod.addLink(new util.AdderChainLink(intelligence, this));
+      wisdommod.addLink(new util.AdderChainLink(wisdom, this));
+      charismamod.addLink(new util.AdderChainLink(charisma, this));
 
       ac.addLink(new util.StaticChainLink('initial ac', 10));
       ac.addLink(new util.AdderChainLink('armor bonus', 'armor-bonus', this));

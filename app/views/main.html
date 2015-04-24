@@ -57,20 +57,9 @@
   </div>
   <div class="col-sm-3">
     <div id="chainable-settings">
-      <div id="chainable-start-chain">
-        <select
-          ng-options="chainable.name for chainable in selectedCharacter.chainables"
-          ng-model="selectedChainable.startChain">
-          <option value="">start chain (none)</option>
-        </select>
-      </div>
     </div>
     <div id="chainlinks">
       <ul>
-        <li ng-hide="(selectedChainable.startChain === null)">
-          {{selectedChainable.startChain.name}}
-          <span class="chainlinkresult">{{selectedChainable.startChain.getFinal()}}</span>
-        </li>
         <li ng-repeat="tuple in selectedChainable.chainTuples">
           {{tuple[0].name}}
           <span class="chainlinkresult">{{tuple[2]}}</span>
