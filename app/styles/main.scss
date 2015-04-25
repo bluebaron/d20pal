@@ -327,6 +327,7 @@ $ratings: good better great awesome;
   $transition-timing-function-move: ease;
   $transition-timing-function-leave: ease-out;
   $stagger-delay: 0.1s;
+  $expanded-chain-link-height: $chain-link-height*2; // eh, it just needs to be bigger
   @mixin animation-stagger($event) {
     &.ng-stagger-#{$event} {
       transition-delay: $stagger-delay;
@@ -340,7 +341,7 @@ $ratings: good better great awesome;
     > li {
       position: relative;
       display: block;
-      height: $chain-link-height;
+      max-height: $chain-link-height;
       background-color: $chain-link-color;
       padding: $chain-link-padding;
       margin-bottom: $chain-link-spacing;
@@ -350,13 +351,17 @@ $ratings: good better great awesome;
       font-weight: bold;
       color: #fff;
 
+      .chainlink-name {
+        height: $chain-link-height - $chain-link-padding;
+      }
+
       .chainlink-options-bottom {
-        position: absolute;
         width: 100%;
         height: ($chain-link-height - (2 * $chain-link-padding))/2;
         bottom: 10px;
         left: 0;
         padding: 0 $chain-link-padding - 5px; // because the arrows are very small chars
+        margin-top: 10px;
 
         button {
           @include modal-free-button;
@@ -413,9 +418,15 @@ $ratings: good better great awesome;
       }
 
       /* Animation for chainlinks */
-      $enter-duration: 1s;
-      $move-duration: 0.5s;
+      $enter-duration: 0.5s;
       $leave-duration: 1s;
+
+      transition: all $enter-duration ease-out;
+
+      &:hover, &.hover {
+        transition: all $enter-duration $transition-timing-function-enter;
+        max-height: $expanded-chain-link-height;
+      }
 
       &.ng-enter {
         transition: all $enter-duration $transition-timing-function-enter;

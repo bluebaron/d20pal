@@ -67,6 +67,14 @@ var d20pal = (function() {
       }, this);
     };
 
+    var removeTag = function(tagString) {
+      initTags(this);
+      var idx = this.tags.indexOf(arg);
+      if (idx !== -1) {
+        this.tags.splice(idx, 1);
+      }
+    }
+
     /**
      * Checks if an object is tagged with the supplied tags. Will check all
      * arrays, including nested arrays. Can't see why that'd be necessary
@@ -96,6 +104,7 @@ var d20pal = (function() {
 
     return {
       tag:          tag,
+      removeTag:    removeTag,
       isTagged:     isTagged
     };
   })(); // end of Taggable definition
@@ -428,6 +437,7 @@ var d20pal = (function() {
                 return oldVal;
               } else {
                 that.modifierCallback = existingChainCallback;
+                this.removeTag('broken-reference');
                 return oldVal + chain.getFinal();
               }
             };
@@ -436,6 +446,7 @@ var d20pal = (function() {
           chain = this.character.getChainableByName(this.addend);
           
           if (!chain) {
+            this.tag('broken-reference');
             callback = missingChainCallback;
           } else {
             callback = existingChainCallback;
