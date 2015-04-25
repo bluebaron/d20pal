@@ -69,11 +69,11 @@ var d20pal = (function() {
 
     var removeTag = function(tagString) {
       initTags(this);
-      var idx = this.tags.indexOf(arg);
+      var idx = this.tags.indexOf(tagString);
       if (idx !== -1) {
         this.tags.splice(idx, 1);
       }
-    }
+    };
 
     /**
      * Checks if an object is tagged with the supplied tags. Will check all
