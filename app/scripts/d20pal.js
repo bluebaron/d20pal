@@ -569,7 +569,14 @@ var d20pal = (function() {
     return newLink;
   };
 
-
+  Chainable.prototype.swapPriorities = function(i, j) {
+    if (i < 0 || j < 0 || i >= this.chainTuples.length || j >= this.chainTuples.length) {
+      return false;
+    }
+    var temp = this.chainTuples[i];
+    this.chainTuples[i] = this.chainTuples[j];
+    this.chainTuples[j] = temp;
+  };
 
   /**
    * Gets value of Chainable after the last link.
@@ -586,6 +593,10 @@ var d20pal = (function() {
     }, this);
 
     return curVal;
+  };
+
+  Chainable.prototype.removeLink = function(idx) {
+    this.chainTuples.splice(idx, 1);
   };
 
   /**

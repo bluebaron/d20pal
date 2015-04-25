@@ -61,7 +61,26 @@
     <div id="chainlinks">
       <ul>
         <li ng-repeat="tuple in selectedChainable.chainTuples">
-          {{tuple[0].name}}
+          <div class="chainlink-name">
+            {{tuple[0].name}}
+          </div>
+          <div class="chainlink-options-bottom">
+            <button
+              class="chainlink-swap-back left"
+              ng-click="selectedChainable.swapPriorities($index, $index-1)">
+              <span class="glyphicon glyphicon-triangle-left"></span>
+            </button>
+            <button
+              class="chainlink-delete left"
+              ng-click="selectedChainable.removeLink($index)">
+              <span class="glyphicon glyphicon-remove"></span>
+            </button>
+            <button
+              class="chainlink-swap-forward right"
+              ng-click="selectedChainable.swapPriorities($index, $index+1)">
+              <span class="glyphicon glyphicon-triangle-right"></span>
+            </button>
+          </div>
           <span class="chainlinkresult">{{tuple[2]}}</span>
         </li>
         <li id="chain-link-management">

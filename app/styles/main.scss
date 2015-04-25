@@ -350,6 +350,31 @@ $ratings: good better great awesome;
       font-weight: bold;
       color: #fff;
 
+      .chainlink-options-bottom {
+        position: absolute;
+        width: 100%;
+        height: ($chain-link-height - (2 * $chain-link-padding))/2;
+        bottom: 10px;
+        left: 0;
+        padding: 0 $chain-link-padding - 5px; // because the arrows are very small chars
+
+        button {
+          @include modal-free-button;
+          
+          > span {
+            line-height: 20px;
+          }
+        }
+
+        .left {
+          float: left;
+        }
+
+        .right {
+          float: right;
+        }
+      }
+
       > .chainlinkresult {
         display: block;
         position: absolute;
