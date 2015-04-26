@@ -770,9 +770,10 @@ var d20pal = (function() {
       character.addChainable(sizeModifierChainable);
     };
 
-    function Class(name, hitDie) {
+    function Class(name, hitDie, statOrder='012345') {
       this.name = name;
       this.hitDie = new util.Dice('d' + hitDie);
+      this.statOrder = statOrder;
     }
 
     Class.prototype.applyToCharacter = function(character) {
@@ -784,26 +785,38 @@ var d20pal = (function() {
       hp.addLink(consMod);
     };
 
-    var human     = new Race('human', 0),
-        dwarf     = new Race('dwarf', 0),
-        elf       = new Race('elf', 0),
-        gnome     = new Race('gnome', 1),
-        halfElf   = new Race('half-elf', 0),
-        halfOrc   = new Race('half-orc', 0),
-        halfling  = new Race('halfling', 1);
+    Class.prototype.orderScores = function(scores) {
+      var sortedScores = scores.sort(function(a,b){return a>b;}),
+          ret = this.statOrder.split('').map(function(sortedScoresIdx) {
+            return sortedScores[sortedScoresIdx];
+          });
 
-    var barbarian = new Class('barbarian', 12),
-        bard      = new Class('bard', 6),
-        cleric    = new Class('cleric', 8),
-        druid     = new Class('druid', 8),
-        fighter   = new Class('fighter', 10),
-        monk      = new Class('monk', 8),
-        paladin   = new Class('paladin', 10),
-        ranger    = new Class('ranger', 8),
-        rogue     = new Class('rogue', 6),
-        sorceror  = new Class('sorceror', 4),
-        wizard    = new Class('wizard', 4);
+      return ret;
+    };
 
+    var races = {
+      human: new Race('human', 0),
+      dwarf: new Race('dwarf', 0),
+      elf: new Race('elf', 0),
+      gnome: new Race('gnome', 1),
+      halfElf: new Race('half-elf', 0),
+      halfOrc: new Race('half-orc', 0),
+      halfling: new Race('halfling', 1)
+    };
+
+    var classes = {
+      barbarian: new Class('barbarian', 12, '543120'),
+      bard: new Class('bard', 6, '041325'),
+      cleric: new Class('cleric', 8, '214053'),
+      druid: new Class('druid', 8, '320451'),
+      fighter: new Class('fighter', 10, '543210'),
+      monk: new Class('monk', 8, '342150'),
+      paladin: new Class('paladin', 10, '421035'),
+      ranger: new Class('ranger', 8, '452130'),
+      rogue: new Class('rogue', 6, '152430'),
+      sorceror: new Class('sorceror', 4, '043215'),
+      wizard: new Class('wizard', 4, '043521')
+    };
 
     /**
      * A chain link that accepts an ability score and outputs its
@@ -829,17 +842,30 @@ var d20pal = (function() {
       return link;
     };
 
-    function rollAbilityScores() {
-      return '123456'.split('').map(function() {
-        return util.Dice.highestOf('4d6', 3).reduce(function(p,c){return p+c;});
-      });
+    function rollAbilityScores(reRollIfBad) {
+      var result = null;
+      do {
+        result = '123456'.split('').map(function() {
+          return util.Dice.highestOf('4d6', 3).reduce(function(p,c){return p+c;});
+        }); // jshint ignore:line
+      } while (reRollIfBad && Math.max.apply(null, result) <= 13);
+      
+      return result;
     }
 
-    function DND35Character(name, race, _class) {
+    function DND35Character(name, race, _class, scores) {
+      if (typeof name === 'object') {
+        var params = name;
+        name = params.name;
+        race = params.race;
+        _class = params._class;
+        scores = params.scores;
+      }
+
       Character.call(this, name);
 
-      this.race = race ? race : human;
-      this._class = _class ? _class : barbarian;
+      this.race = race ? race : races.human;
+      this._class = _class ? _class : classes.barbarian;
 
       var strength         = new Chainable('strength'),
           dexterity        = new Chainable('dexterity'),
@@ -864,6 +890,8 @@ var d20pal = (function() {
     
       var initiative = new Chainable('initiative');
 
+      var xp = new Chainable('xp');
+
       this.chainables = [
         hp, ac, initiative,
         strength, strengthmod,
@@ -872,17 +900,29 @@ var d20pal = (function() {
         intelligence, intelligencemod,
         wisdom, wisdommod,
         charisma, charismamod,
-        fortitude, reflex, will
+        fortitude, reflex, will,
+        xp
       ];
 
-      var score = new util.StaticChainLink('default ability score', 10);
+      if (!scores) {
+        var score = new util.StaticChainLink('default ability score', 10);
+        scores = [];
 
-      strength.addLink(score);
-      dexterity.addLink(score);
-      constitution.addLink(score);
-      intelligence.addLink(score);
-      wisdom.addLink(score);
-      charisma.addLink(score);
+        for (var i = 0; i < 6; i++) {
+          scores.push(score);
+        }
+      } else {
+        scores = scores.map(function(scoreValue) {
+          return new util.AdderChainLink(scoreValue, this);
+        }, this);
+      }
+
+      strength.addLink(scores[0]);
+      dexterity.addLink(scores[1]);
+      constitution.addLink(scores[2]);
+      intelligence.addLink(scores[3]);
+      wisdom.addLink(scores[4]);
+      charisma.addLink(scores[5]);
 
       var abilityModifier = new AbilityModifierChainLink();
 
@@ -922,15 +962,39 @@ var d20pal = (function() {
         name:   'New Character',
         race:   null,
         _class: null,
-        reRoll: true
+        reRoll: true,
+        scores: null,
+        sortScores: true
       };
 
       params = extend(defaults, params);
+
+      var keys = Object.keys(races);
+      if (params.race === null) {
+        params.race = races[keys[keys.length * Math.random() << 0]]; // jshint ignore:line
+      }
+      keys = Object.keys(classes);
+      if (params._class === null) {
+        params._class = classes[keys[keys.length * Math.random() << 0]]; // jshint ignore:line
+      }
+
+      if (params.scores === null) {
+        var scores = rollAbilityScores(params.reRoll);
+        if (params.sortScores) { 
+          scores = params._class.orderScores(scores);
+        }
+
+        params.scores = scores;
+      }
+
+      return new DND35Character(params);
     }
 
     return {
-      DND35Character: DND35Character,
-      generateCharacter: generateCharacter,
+      races:              races,
+      classes:            classes,
+      DND35Character:     DND35Character,
+      generateCharacter:  generateCharacter,
       AbilityModifierChainLink: AbilityModifierChainLink
     };
   })();

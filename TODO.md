@@ -11,3 +11,5 @@ Todo
 *   Write some friggin unit tests
 *   Figure out why character paste box will not animate
 *   Change character view so a subset of the chainables are displayed in the infopanel ('display chainables')
+*   Add the capability to disable specific links in the chain, making them output what is input no matter what
+*   Write documentation when things have settled a bit
