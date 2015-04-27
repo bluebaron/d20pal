@@ -10,6 +10,8 @@ Todo
 *   Make everything more encapsulated
 *   Write some friggin unit tests
 *   Figure out why character paste box will not animate
-*   Change character view so a subset of the chainables are displayed in the infopanel ('display chainables')
 *   Add the capability to disable specific links in the chain, making them output what is input no matter what
 *   Write documentation when things have settled a bit
+*   Change ChainLink constructor to check if it is being called from the constructor of a registered type so that it is automatically appropriately tagged and serialization can be simplified by always calling the superclass method in the overriding method to eliminate redundancy
+*   Create a subclass of ChainLink for links whose only unique feature is that they have a specific callback function whose getRepresentation method would only return a string, saving unnecessary nested objects in the JSON representation (SimpleChainLink)
+*   Create and register a new subclass of ChainLink for calculation of levels from xp

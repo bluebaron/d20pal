@@ -72,7 +72,9 @@ angular.module('d20palApp')
       ['initiative', 'constitution', 'constitution-modifier'],
       ['fortitude', 'intelligence', 'intelligence-modifier'],
       ['reflex', 'wisdom', 'wisdom-modifier'],
-      ['will', 'charisma', 'charisma-modifier']
+      ['will', 'charisma', 'charisma-modifier'],
+      ['base-attack-bonus'],
+      ['xp']
     ];
     $scope.filledStatDisplayTemplate = [];
 
@@ -94,11 +96,11 @@ angular.module('d20palApp')
             }
           });
         }
-      ).concat($scope.selectedCharacter.chainables.filter(function(chainable, i) {
+      );/*.concat($scope.selectedCharacter.chainables.filter(function(chainable, i) {
         return indices.indexOf(i) === -1;
       }).map(function(chainable) {
         return [chainable];
-      }));
+      }));*/
     };
 
     $scope.isNonTemplateStat = function(index) {

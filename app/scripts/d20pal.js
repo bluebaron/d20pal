@@ -121,7 +121,7 @@ var d20pal = (function() {
    */
   function ChainLink(name, modifierCallback) {
     this.name = name || 'chainlink';
-    this.modifierCallback = modifierCallback || function(){return null;};
+    this.modifierCallback = modifierCallback || function(oldVal){return oldVal;};
   }
 
   /**
@@ -140,47 +140,86 @@ var d20pal = (function() {
   };
 
   /**
-   * Gets an object representation of the ChainLink to be used in the
+   * Gets a string representation of the ChainLink to be used in the
    * serialization of a character.
    *
-   * @returns {Object} Object representation of the ChainLink.
+   * @returns {String} String representation of the ChainLink.
    */
-  ChainLink.prototype.getRepresentation = function() {
+  ChainLink.prototype.serialize = function() {
     this.tag(); // initializes tags in case they weren't already
+    var propStr = null,
+        name = this.name;
+    if (this.tags.length > 0) {
+      propStr = ['tags', this.tags.join(',')].join('=');
+    }
+    
+    Object.keys(ChainLink.types).some(function(key) {
+      if (this instanceof ChainLink.types[key].$constructor) {
+        ChainLink.types[key].props.forEach(function(propName) {
+          var propVal;
+          if (this[propName] instanceof Chainable) {
+            propVal = this[propName].name;
+          } else {
+            propVal = this[propName].toString();
+          }
+          propStr += ';' + [propName, propVal].join('=');
+        }, this);
 
-    var obj = {
-      name: this.name,
-      tags: this.tags
+        if (this.name !== key) {
+          propStr += ';name=' + this.name;
+        }
+
+        name = key;
+
+        return true;
+      }
+
+      return false;
+    }, this);
+
+    return [name, propStr].join(':');
+  };
+
+  ChainLink.types = {};
+
+  ChainLink.registerType = function(name, $constructor, props) {
+    ChainLink.types[name] = {
+      $constructor: $constructor,
+      props: props ? props : []
     };
-
-    return obj;
   };
 
-  ChainLink.registerType = function(name, $constructor) {
-    if (ChainLink.types === undefined) {
-      ChainLink.types = [];
-    }
-
-    ChainLink.types.push({
-      name: name,
-      $constructor: $constructor
-    });
-  };
-
-  ChainLink.fromRepresentation = function(rep, character) {
+  ChainLink.fromString = function(rep, character) {
     // res is all registered types whose names were found in rep's tags
-    var type = 'default',
-        res = ChainLink.types.filter(function(type) { 
-          return rep.tags.indexOf(type.name) !== -1;
-        }),
-        chainlink = null;
-    if (res.length > 0) {
-      chainlink = res[0].$constructor.fromRepresentation(rep, character);
-    } else {
-      chainlink = new ChainLink(rep.name);
-    }
+    var chainlink = null,
+        type = ChainLink.types[rep.split(':')[0]];
 
-    chainlink.tag(rep.tags);
+    if (type) {
+      var repObj = {
+        name: rep.split(':')[0]
+      };
+
+      rep.split(':')[1].split(';').map(function(argStr) {
+        return {
+          key: argStr.split('=')[0],
+          val: argStr.split('=')[1]
+        };
+      }).forEach(function(arg) {
+        if (arg.key === 'tags') {
+          repObj[arg.key] = arg.val.split(',');
+        } else {
+          repObj[arg.key] = !isNaN(parseFloat(arg.val)) ? parseFloat(arg.val) : arg.val;
+        }
+      });
+
+      chainlink = type.$constructor.fromRepresentation(repObj, character);
+      if (repObj.tags) {
+        chainlink.tag(rep.tags);
+      }
+      chainlink.name = repObj.name;
+    } else {
+      return new ChainLink(); // TODO identity chainlink in case type not found
+    }
 
     return chainlink;
   };
@@ -340,24 +379,15 @@ var d20pal = (function() {
         return that.value;
       };
       ChainLink.call(this, name, callback);
-      this.tag('static');
     }
     StaticChainLink.prototype = Object.create(ChainLink.prototype);
     StaticChainLink.prototype.constructor = StaticChainLink;
-    ChainLink.registerType('static', StaticChainLink);
+    ChainLink.registerType('static', StaticChainLink, ['value']);
 
     StaticChainLink.fromRepresentation = function(rep) {
       var schainlink = new StaticChainLink(rep.name, rep.value);
-      schainlink.tag(rep.tags);
 
       return schainlink;
-    };
-
-    StaticChainLink.prototype.getRepresentation = function() {
-      var rep = ChainLink.prototype.getRepresentation.call(this);
-      rep.value = this.value;
-
-      return rep;
     };
 
     /**
@@ -373,37 +403,40 @@ var d20pal = (function() {
         return oldVal * that.multiplier;
       };
       ChainLink.call(this, name, callback);
-      this.tag('multiplier');
     }
     MultiplierChainLink.prototype = Object.create(ChainLink.prototype);
     MultiplierChainLink.prototype.constructor = MultiplierChainLink;
-    ChainLink.registerType('multiplier', MultiplierChainLink);
+    ChainLink.registerType('multiplier', MultiplierChainLink, ['multiplier']);
 
     MultiplierChainLink.fromRepresentation = function(rep) {
       var mchainlink = new MultiplierChainLink(rep.name, rep.multiplier);
-      mchainlink.tag(rep.tags);
       
       return mchainlink;
-    };
-
-    MultiplierChainLink.prototype.getRepresentation = function() {
-      var rep = ChainLink.prototype.getRepresentation.call(this);
-      rep.multiplier = this.multiplier;
-
-      return rep;
     };
 
     function AdderChainLink(name, addend, character) {
       if (arguments.length === 3) { // name, addend, character
         this.addend = addend;
         this.character = character;
-      } else if (arguments.length === 2) { // addend, character
+      } else if (arguments.length === 2) { 
+        if (typeof arguments[0] === 'string') { // addend (string), character
+          this.addend = arguments[0];
+          this.character = arguments[1];
+          name = null;
+        } else if (typeof arguments[1] === 'number') {  // name, addend (number)
+          this.name = arguments[0];
+          this.addend = arguments[1];
+        }
+      } else if (arguments.length === 1) { // addend (chainable)
         this.addend = arguments[0];
-        this.character = arguments[1];
+        name = null;
+      }
+
+      if (!name) {
         if (typeof this.addend === 'number') {
           name = this.addend.toString() + ' adder';
         } else if (this.addend instanceof Chainable) {
-          name = this.addend.name;
+          name = this.addend.name.replace('-', ' ');
         } else {
           name = this.addend.replace('-', ' ');
         }
@@ -420,8 +453,6 @@ var d20pal = (function() {
             return oldVal + that.addend;
           }
         };
-
-        this.tag('static-adder');
       } else { // Dynamic addend
         var chain = null,
             existingChainCallback = function(oldVal, params) {
@@ -454,16 +485,14 @@ var d20pal = (function() {
         } else if (this.addend instanceof Chainable) { // Dynamic given chainable
           chain = this.addend;
           callback = existingChainCallback;
-          this.tag('dynamic-adder');
         }
       }
 
       ChainLink.call(this, name, callback);
-      this.tag('adder');
     }
     AdderChainLink.prototype = Object.create(ChainLink.prototype);
     AdderChainLink.prototype.constructor = AdderChainLink;
-    ChainLink.registerType('adder', AdderChainLink);
+    ChainLink.registerType('adder', AdderChainLink, ['addend']);
 
     AdderChainLink.prototype.getRepresentation = function() {
       var rep = ChainLink.prototype.getRepresentation.call(this);
@@ -485,7 +514,11 @@ var d20pal = (function() {
       if (rep.name) {
         return new AdderChainLink(rep.name, rep.addend, character);
       } else {
-        return new AdderChainLink(rep.addend, character);
+        if (typeof rep.addend === 'string') {
+          return new AdderChainLink(rep.addend, character);
+        } else {
+          return new AdderChainLink(rep.addend);
+        }
       }
     };
 
@@ -619,7 +652,7 @@ var d20pal = (function() {
   Chainable.prototype.getRepresentation = function() {
     var chainTupleRepresentations = this.chainTuples.map(function(tuple) {
       return [
-        tuple[0].getRepresentation(),
+        tuple[0].serialize(),
         tuple[1] // don't bother saving partials
       ];
     });
@@ -636,7 +669,7 @@ var d20pal = (function() {
     var chain = new Chainable(rep.name);
 
     rep.chainTuples.forEach(function(tuple) {
-      var chainLink = ChainLink.fromRepresentation(tuple[0], character);
+      var chainLink = ChainLink.fromString(tuple[0], character);
       chain.addLink(chainLink, tuple[1]);
     });
 
@@ -717,7 +750,6 @@ var d20pal = (function() {
       return false;
     }
 
-    character.tags = [];
     character.tag(obj.tags);
     character.chainables = [];
     for (var i = 0; i < obj.chainables.length; i++) {
@@ -753,6 +785,72 @@ var d20pal = (function() {
    * @memberof module:d20pal
    */
   var dnd35 = (function() {
+    //////////////////////////////////////////////////
+    // Base Attack Bonus ChainLinks
+    //////////////////////////////////////////////////
+
+    function GoodBABChainLink() {
+      ChainLink.call(this, 'good base attack bonus', GoodBABChainLink.callback);
+      this.tag('good-bab');
+    }
+    GoodBABChainLink.prototype = Object.create(ChainLink.prototype);
+    GoodBABChainLink.prototype.constructor = GoodBABChainLink;
+    ChainLink.registerType('good-bab', GoodBABChainLink);
+    
+    GoodBABChainLink.fromRepresentation = function(rep) {
+      return new GoodBABChainLink();
+    };
+
+    GoodBABChainLink.callback = function(oldVal) {
+      return oldVal;
+    };
+
+    function AverageBABChainLink() {
+      ChainLink.call(this, 'average base attack bonus', AverageBABChainLink.callback);
+      this.tag('average-bab');
+    }
+    AverageBABChainLink.prototype = Object.create(ChainLink.prototype);
+    AverageBABChainLink.prototype.constructor = AverageBABChainLink;
+    ChainLink.registerType('average-bab', AverageBABChainLink);
+
+    AverageBABChainLink.fromRepresentation = function(rep) {
+      return new AverageBABChainLink();
+    };
+
+    AverageBABChainLink.callback = function(oldVal) {
+      if (oldVal === 1) {
+        return 0;
+      }
+
+      var shifted = oldVal - 1,
+          remainder = shifted % 4,
+          result = shifted + (remainder===0?-1:0);
+
+      return result;
+    };
+
+    function PoorBABChainLink() {
+      ChainLink.call(this, 'poor base attack bonus', PoorBABChainLink.callback);
+      this.tag('poor-bab');
+    }
+    PoorBABChainLink.prototype = Object.create(ChainLink.prototype);
+    PoorBABChainLink.prototype.constructor = PoorBABChainLink;
+    ChainLink.registerType('poor-bab', PoorBABChainLink);
+
+    PoorBABChainLink.fromRepresentation = function(rep) {
+      return new PoorBABChainLink();
+    };
+
+    PoorBABChainLink.callback = function(oldVal) {
+      return Math.floor(oldVal / 2);
+    };
+
+    var baseAttackBonuses = {
+      good:     GoodBABChainLink,
+      average:  AverageBABChainLink,
+      poor:     PoorBABChainLink
+    };
+
     function randomFrom(arr) {
       return arr[Math.floor(Math.random()*arr.length)];
     }
@@ -770,19 +868,23 @@ var d20pal = (function() {
       character.addChainable(sizeModifierChainable);
     };
 
-    function Class(name, hitDie, statOrder='012345') {
+    function Class(name, hitDie, baseAttackBonusType, statOrder='012345') {
       this.name = name;
       this.hitDie = new util.Dice('d' + hitDie);
       this.statOrder = statOrder;
+      this.baseAttackBonusType = baseAttackBonusType;
     }
 
     Class.prototype.applyToCharacter = function(character) {
       var maxHitDie = new util.AdderChainLink('max hit die', this.hitDie.numsides, character),
           consMod   = new util.AdderChainLink('constitution-modifier', character),
-          hp = character.getChainableByName('hp'); 
+          hp = character.getChainableByName('hp'),
+          baseAttackBonus = character.getChainableByName('base-attack-bonus'),
+          babLink = new this.baseAttackBonusType(); 
       
       hp.addLink(maxHitDie);
       hp.addLink(consMod);
+      baseAttackBonus.addLink(babLink);
     };
 
     Class.prototype.orderScores = function(scores) {
@@ -805,17 +907,17 @@ var d20pal = (function() {
     };
 
     var classes = {
-      barbarian: new Class('barbarian', 12, '543120'),
-      bard: new Class('bard', 6, '041325'),
-      cleric: new Class('cleric', 8, '214053'),
-      druid: new Class('druid', 8, '320451'),
-      fighter: new Class('fighter', 10, '543210'),
-      monk: new Class('monk', 8, '342150'),
-      paladin: new Class('paladin', 10, '421035'),
-      ranger: new Class('ranger', 8, '452130'),
-      rogue: new Class('rogue', 6, '152430'),
-      sorceror: new Class('sorceror', 4, '043215'),
-      wizard: new Class('wizard', 4, '043521')
+      barbarian: new Class('barbarian', 12, baseAttackBonuses.good, '543120'),
+      bard: new Class('bard', 6, baseAttackBonuses.good, '041325'),
+      cleric: new Class('cleric', 8, baseAttackBonuses.average, '214053'),
+      druid: new Class('druid', 8, baseAttackBonuses.average, '320451'),
+      fighter: new Class('fighter', 10, baseAttackBonuses.good, '543210'),
+      monk: new Class('monk', 8, baseAttackBonuses.average, '342150'),
+      paladin: new Class('paladin', 10, baseAttackBonuses.good, '421035'),
+      ranger: new Class('ranger', 8, baseAttackBonuses.good, '452130'),
+      rogue: new Class('rogue', 6, baseAttackBonuses.average, '152430'),
+      sorceror: new Class('sorceror', 4, baseAttackBonuses.poor, '043215'),
+      wizard: new Class('wizard', 4, baseAttackBonuses.poor, '043521')
     };
 
     /**
@@ -853,7 +955,7 @@ var d20pal = (function() {
       return result;
     }
 
-    function DND35Character(name, race, _class, scores) {
+    function DND35Character(name, race, _class, scores, secondaryClass) {
       if (typeof name === 'object') {
         var params = name;
         name = params.name;
@@ -866,6 +968,7 @@ var d20pal = (function() {
 
       this.race = race ? race : races.human;
       this._class = _class ? _class : classes.barbarian;
+      this.secondaryClass = secondaryClass ? secondaryClass : null;
 
       var strength         = new Chainable('strength'),
           dexterity        = new Chainable('dexterity'),
@@ -890,7 +993,19 @@ var d20pal = (function() {
     
       var initiative = new Chainable('initiative');
 
-      var xp = new Chainable('xp');
+      var xp = new Chainable('xp'),
+          characterLevel = new Chainable('character-level'),
+          classLevel = new Chainable('class-level'),
+          secondaryClassLevel = new Chainable('secondary-class-level');
+
+      var baseAttackBonus = new Chainable('base-attack-bonus');
+    
+      var baseSaveFort = new Chainable('base-save-fortitude'),
+          baseSaveRef = new Chainable('base-save-reflex'),
+          baseSaveWill = new Chainable('base-save-will');
+
+      var classSkillMaxRanks = new Chainable('class-skill-max-ranks'),
+          crossClassMaxSkillRanks = new Chainable('cross-class-skill-max-ranks');
 
       this.chainables = [
         hp, ac, initiative,
@@ -901,7 +1016,9 @@ var d20pal = (function() {
         wisdom, wisdommod,
         charisma, charismamod,
         fortitude, reflex, will,
-        xp
+        xp, characterLevel, classLevel, secondaryClassLevel,
+        baseAttackBonus,
+        baseSaveFort, baseSaveRef, baseSaveWill
       ];
 
       if (!scores) {
@@ -913,7 +1030,7 @@ var d20pal = (function() {
         }
       } else {
         scores = scores.map(function(scoreValue) {
-          return new util.AdderChainLink(scoreValue, this);
+          return new util.AdderChainLink('ability score', scoreValue);
         }, this);
       }
 
@@ -926,17 +1043,17 @@ var d20pal = (function() {
 
       var abilityModifier = new AbilityModifierChainLink();
 
-      strengthmod.addLink(new util.AdderChainLink(strength, this));
+      strengthmod.addLink(new util.AdderChainLink(strength));
       strengthmod.addLink(abilityModifier);
-      dexteritymod.addLink(new util.AdderChainLink(dexterity, this));
+      dexteritymod.addLink(new util.AdderChainLink(dexterity));
       dexteritymod.addLink(abilityModifier);
-      constitutionmod.addLink(new util.AdderChainLink(constitution, this));
+      constitutionmod.addLink(new util.AdderChainLink(constitution));
       constitutionmod.addLink(abilityModifier);
-      intelligencemod.addLink(new util.AdderChainLink(intelligence, this));
+      intelligencemod.addLink(new util.AdderChainLink(intelligence));
       intelligencemod.addLink(abilityModifier);
-      wisdommod.addLink(new util.AdderChainLink(wisdom, this));
+      wisdommod.addLink(new util.AdderChainLink(wisdom));
       wisdommod.addLink(abilityModifier);
-      charismamod.addLink(new util.AdderChainLink(charisma, this));
+      charismamod.addLink(new util.AdderChainLink(charisma));
       charismamod.addLink(abilityModifier);
 
       ac.addLink(new util.StaticChainLink('initial ac', 10));
@@ -949,7 +1066,22 @@ var d20pal = (function() {
       reflex.addLink(new util.StaticChainLink('default reflex', 13));
       will.addLink(new util.StaticChainLink('default will', 13));
 
-      initiative.addLink(new util.AdderChainLink(dexteritymod, this));
+      initiative.addLink(new util.AdderChainLink(dexteritymod));
+
+      xp.addLink(new util.StaticChainLink('earned xp', 0));
+      characterLevel.addLink(new util.AdderChainLink(xp));
+      characterLevel.addLink(new ChainLink('levels earned', function(xp) {
+        var xpNeeded = 0,
+            level,
+            change = 1000;
+        for (level = 1; xp >= xpNeeded; level++) {
+          xpNeeded += level * change;
+        }
+
+        return level - 1;
+      })); 
+
+      baseAttackBonus.addLink(new util.AdderChainLink(classLevel));
 
       this.race.applyToCharacter(this);
       this._class.applyToCharacter(this);
