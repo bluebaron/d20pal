@@ -415,16 +415,18 @@ var d20pal = (function() {
     };
 
     function AdderChainLink(name, addend, character) {
+      // Is this really the best way to be handling this?
       if (arguments.length === 3) { // name, addend, character
         this.addend = addend;
         this.character = character;
       } else if (arguments.length === 2) { 
-        if (typeof arguments[0] === 'string') { // addend (string), character
+        if (typeof arguments[0] === 'string' && arguments[1] instanceof Character) { // addend (string), character
           this.addend = arguments[0];
           this.character = arguments[1];
           name = null;
-        } else if (typeof arguments[1] === 'number') {  // name, addend (number)
-          this.name = arguments[0];
+        } else if (arguments[1] instanceof Chainable ||
+                   typeof arguments[1] === 'number') {  // name, addend (number)
+          name = arguments[0];
           this.addend = arguments[1];
         }
       } else if (arguments.length === 1) { // addend (chainable)
@@ -1080,6 +1082,7 @@ var d20pal = (function() {
 
         return level - 1;
       })); 
+      classLevel.addLink(new util.AdderChainLink(characterLevel));
 
       baseAttackBonus.addLink(new util.AdderChainLink(classLevel));
 
