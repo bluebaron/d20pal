@@ -199,18 +199,21 @@ var d20pal = (function() {
         name: rep.split(':')[0]
       };
 
-      rep.split(':')[1].split(';').map(function(argStr) {
-        return {
-          key: argStr.split('=')[0],
-          val: argStr.split('=')[1]
-        };
-      }).forEach(function(arg) {
-        if (arg.key === 'tags') {
-          repObj[arg.key] = arg.val.split(',');
-        } else {
-          repObj[arg.key] = !isNaN(parseFloat(arg.val)) ? parseFloat(arg.val) : arg.val;
-        }
-      });
+      // parse chainable args
+      if (rep.split(':')[1]) {
+        rep.split(':')[1].split(';').map(function(argStr) {
+          return {
+            key: argStr.split('=')[0],
+            val: argStr.split('=')[1]
+          };
+        }).forEach(function(arg) {
+          if (arg.key === 'tags') {
+            repObj[arg.key] = arg.val.split(',');
+          } else {
+            repObj[arg.key] = !isNaN(parseFloat(arg.val)) ? parseFloat(arg.val) : arg.val;
+          }
+        });
+      }
 
       chainlink = type.$constructor.fromRepresentation(repObj, character);
       if (repObj.tags) {
@@ -218,7 +221,7 @@ var d20pal = (function() {
       }
       chainlink.name = repObj.name;
     } else {
-      return new ChainLink(); // TODO identity chainlink in case type not found
+      chainlink = new ChainLink(); // TODO identity chainlink in case type not found
     }
 
     return chainlink;
