@@ -10,34 +10,6 @@
 /* global d20pal: false */
 angular.module('d20palApp')
   .controller('MainCtrl', function ($scope) {
-    //////////////////////////////////////////////////
-    // Character Management
-    //////////////////////////////////////////////////
-    var joe = new d20pal.dnd35.DND35Character('Joe');
-    window.joe = joe;
-    $scope.characters = [joe];
-    $scope.selectedCharacter = null;
-
-    $scope.$watch(function(scope) {
-      return $scope.selectedCharacter;
-    }, function(scope) {
-      $scope.fillStatDisplayTemplate();
-    });
-
-    $scope.selectedCharacter = joe;
-
-    $scope.deleteCurrentCharacter = function() {
-      if (window.confirm(
-        'Are you sure you would like to delete character "' +
-        $scope.selectedCharacter.getName() + '"?')) {
-        $scope.characters.splice($scope.characters.indexOf($scope.selectedCharacter), 1);
-        if ($scope.characters.length === 0) {
-          $scope.characters.push(joe);
-        }
-        $scope.selectedCharacter = $scope.characters[0];
-      }
-    };
-
     $scope.importCharacter = function(json) {
       var newCharacter = d20pal.Character.fromString(json);
       if (newCharacter) {
