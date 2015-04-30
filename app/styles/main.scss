@@ -97,64 +97,36 @@ body {
   }
 }
 
-$infopanel-chrome-color: #111;
+/********************************************************************/
+/* Character view styles                                            */
+/********************************************************************/
 
-/* Character list */
-#character-options {
-  overflow: hidden;
-  margin-bottom: 10px;
+#chainable-list {
+  @include remove-list-styles;
 
-  > ul {
-    @include remove-list-styles;
+  li {
+    padding: 0 10px;
+    height: 30px;
 
-    > li {
-      > div {
-        width: 100%;
-        text-align: center;
-      }
+    line-height: 30px;
+
+    &:nth-of-type(odd) {
+      background-color: #ccc;
     }
   }
 
-  > #character-options-buttons {
-    overflow: hidden;
+  .chainable-name {
+    float: left;
 
-    > .character-option {
-      @include modal-free-button;
-      font-size: 20px;
-      width: 33.33%;
-      float: left;
-
-      text-align: center;
-    }
+    font-weight: bold;
   }
+  
+  .chainable-value {
+    @include clearfix;
 
-    > #character-list {
-      @include flat-select($infopanel-chrome-color);
+    float: right;
 
-      margin-bottom: 10px;
-    }
-
-  > #character-json-data {
-    overflow: auto;
-    margin-top: 10px;
-    border: 1px solid $infopanel-chrome-color;
-
-    &.ng-enter {
-      height: 0;
-      transition: 0.3s ease-in-out all;
-      
-      &-active {
-        height: 100px;
-      }
-    }
-
-    > textarea {
-      width: 100%;
-      height: 100%;
-      border: 0;
-      background-color: transparent;
-      resize: none;
-    }
+    text-align: right;
   }
 }
 
@@ -188,121 +160,6 @@ $ratings: good better great awesome;
   
   &-modifier {
     background-color: lighten($color, 20);
-  }
-}
-
-#infopanel {
-  $table-border: 1px solid #fff;
-  $table-row-height: 30px;
-
-  width: 100%;
-  margin-bottom: 10px;
-
-  > tbody {
-    > tr {
-      > td {
-        height: $table-row-height;
-        color: $infopanel-chrome-color;
-
-        border: $table-border;
-
-        line-height: 20px;
-        font-size: 20px;
-        text-align: center;
-        font-weight: bold;
-
-        @include clickable;
-        
-        > .chainable-name {
-          display: block;
-          width: 100%;
-          height: 10px;
-
-          border-top: $table-border;
-
-          font-family: 'Arial Black', sans;
-          font-weight: bold;
-          font-size: 10px;
-          line-height: 10px;
-        }
-
-        &:first-of-type {
-          border-left: none;
-        }
-
-        &:last-of-type {
-          border-right: none;
-        }
-
-        &.hp {
-          color: #f00;
-        }
-
-        @for $i from 1 through length($ratings) {
-          &.#{nth($ratings, $i)} {
-            color: darken(#0f0, $i * 25);
-          }
-        }
-
-        @each $name in $ability-names {
-          &.#{$name} {
-            background-color: map-get($ability-colors, $name);
-            border: $table-border;
-
-            font-size: $table-row-height;
-            line-height: $table-row-height;
-
-            &-modifier {
-              background-color: lighten(map-get($ability-colors, $name), 20);
-
-              font-size: $table-row-height;
-              line-height: $table-row-height;
-
-              > .chainable-name {
-                display: none;
-              }
-            }
-
-            > .chainable-name {
-              display: block;
-              width: 16px;
-              height: $table-row-height;
-              padding-left: 3px;
-              padding-right: 3px;
-              float: left;
-
-              border-top: none;
-              border-right: $table-border;
-
-              word-wrap: break-word;
-              text-align: center;
-            }
-          }
-        }
-      }
-
-      &:first-of-type > td {
-        border-top: none;
-      }
-
-      &:last-of-type > td {
-        border-bottom: none;
-      }
-
-      &#chainable-add {
-        > td {
-          input[type=text] {
-            width: 100%;
-            border: 0;
-            border-bottom: 1px solid #000;
-          }
-
-          > button {
-            @include modal-free-button;
-          }
-        }
-      }
-    }
   }
 }
 

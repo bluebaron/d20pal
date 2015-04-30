@@ -4,13 +4,14 @@
   </div>
 </div>
 <div class="row">
-  <div class="col-sm-4 col-sm-push-4">
+  <div class="col-sm-4 col-sm-push-5">
     Character RPG info
   </div>
-  <div class="col-sm-4 col-sm-pull-4">
-    <ul>
+  <div class="col-sm-5 col-sm-pull-4">
+    <ul id="chainable-list">
       <li ng-repeat="chainable in character.chainables">
-        {{chainable.name}}
+        <span class="chainable-name">{{chainable.name}}</span>
+        <span class="chainable-value">{{chainable.getFinal()}}</span>
       </li>
     </ul>
   </div>
