@@ -10,7 +10,9 @@
   <div class="col-sm-5 col-sm-pull-4">
     <ul id="chainable-list">
       <li ng-repeat="chainable in character.chainables">
-        <span class="chainable-name">{{chainable.name}}</span>
+        <a ng-href="#/characters/{{character.name}}/chainables/{{chainable.name}}">
+          <span class="chainable-name">{{chainable.name}}</span>
+        </a>
         <span class="chainable-value">{{chainable.getFinal()}}</span>
       </li>
     </ul>

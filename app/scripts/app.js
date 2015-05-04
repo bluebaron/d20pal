@@ -39,11 +39,19 @@ angular
         templateUrl: 'views/character-edit.html',
         controller: 'EditCharacterCtrl'
       })
+      .when('/characters/:character/chainables/:chainable', {
+        templateUrl: 'views/chainable.html',
+        controller: 'ChainableCtrl'
+      })
+      .when('/characters/:character/chainables/:chainable/links/:link', {
+        templateUrl: 'views/chain-link-edit.html',
+        controller: 'EditChainLinkCtrl',
+      })
       .when('/about', {
         templateUrl: 'views/about.html',
         controller: 'AboutCtrl'
       })
       .otherwise({
-        redirectTo: '/'
+        redirectTo: '/characters'
       });
   });

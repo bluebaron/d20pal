@@ -1,5 +1,6 @@
 'use strict';
 
+/* global d20pal: false */
 angular.module('d20palApp')
   .factory('charactersService', function($q) {
     var joe = new d20pal.dnd35.DND35Character('Joe');
