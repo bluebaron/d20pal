@@ -15,3 +15,4 @@ Todo
 *   Change ChainLink constructor to check if it is being called from the constructor of a registered type so that it is automatically appropriately tagged and serialization can be simplified by always calling the superclass method in the overriding method to eliminate redundancy
 *   Create a subclass of ChainLink for links whose only unique feature is that they have a specific callback function whose getRepresentation method would only return a string, saving unnecessary nested objects in the JSON representation (SimpleChainLink)
 *   Create and register a new subclass of ChainLink for calculation of levels from xp
+*   Find out if it would be better to include the editor views in the concat block in index.html or have the script tags in the editor partial
