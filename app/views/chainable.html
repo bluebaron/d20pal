@@ -1,0 +1,9 @@
+<div class="row">
+  <div class="col-xs-4">
+    <ul>
+      <li ng-repeat="chainTuple in chainable.chainTuples">
+        <a class="chain-link-name" ng-href="#/characters/{{character.name}}/chainables/{{chainable.name}}/links/{{$index}}"> {{chainTuple[0].name}}</a>: {{chainTuple[2]}}
+      </li>
+    </ul>
+  </div>
+</div>

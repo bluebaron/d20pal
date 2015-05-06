@@ -3,11 +3,14 @@
 /* global d20pal: false */
 angular.module('d20palApp')
   .factory('charactersService', function($q) {
-    var joe = new d20pal.dnd35.DND35Character('Joe');
-    window.joe = joe;
+    try {
+      var joe = new d20pal.dnd35.DND35Character('Joe');
+    } catch (e) {
+      //alert(e.message);
+    }
 
     var characters = [];
-
+    
     function getCharacters() {
       return $q(function(resolve, reject) {
         if (characters.length === 0) {

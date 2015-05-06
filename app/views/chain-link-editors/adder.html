@@ -1,0 +1,16 @@
+<div ng-controller="EditAdderChainLinkCtrl">
+  Value to be added:
+  <div class="radio"> 
+    <label>
+      <input type="radio" name="addend-types" id="static-adder" value="static" ng-model="addendType">
+    </label>
+    <input type="number" placeholder="#" ng-model="staticAddend" ng-disabled="addendType === 'dynamic'">
+  </div>
+  <div class="radio">
+    <label>
+      <input type="radio" name="addend-types" id="dynamic-adder" value="dynamic" ng-model="addendType">
+    </label>
+    <input type="text" placeholder="Chainable name (e.g. 'hp')" ng-model="dynamicAddend" ng-disabled="addendType === 'static'">
+  </div>
+  <button type="button" class="btn btn-primary" ng-click="saveLink()">Save</button>
+</div>
