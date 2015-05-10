@@ -11,7 +11,7 @@ angular.module('d20palApp')
       if ($scope.addendType === 'static') {
         $scope.staticAddend = $scope.chainLink.getAddend();
       } else {
-        $scope.dynamicAddend = $scope.chainLink.getAddend().getName();
+        $scope.dynamicAddend = $scope.chainLink.getAddendName();
       }
 
       $scope.saveLink = function() {

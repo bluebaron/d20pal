@@ -408,13 +408,21 @@ var d20pal = (function() {
       this.value = value;
       var that = this;
       var callback = function() {
-        return that.value;
+        return that.getValue();
       };
       ChainLink.call(this, name, callback);
     }
     StaticChainLink.prototype = Object.create(ChainLink.prototype);
     StaticChainLink.prototype.constructor = StaticChainLink;
     ChainLink.registerType('static', StaticChainLink, ['value']);
+
+    StaticChainLink.prototype.setValue = function(val) {
+      this.value = val;
+    };
+
+    StaticChainLink.prototype.getValue = function() {
+      return this.value;
+    };
 
     StaticChainLink.fromRepresentation = function(rep) {
       var schainlink = new StaticChainLink(rep.name, rep.value);
@@ -432,13 +440,21 @@ var d20pal = (function() {
       this.multiplier = multiplier;
       var that = this;
       var callback = function(oldVal) {
-        return oldVal * that.multiplier;
+        return oldVal * that.getMultiplier();
       };
       ChainLink.call(this, name, callback);
     }
     MultiplierChainLink.prototype = Object.create(ChainLink.prototype);
     MultiplierChainLink.prototype.constructor = MultiplierChainLink;
     ChainLink.registerType('multiplier', MultiplierChainLink, ['multiplier']);
+
+    MultiplierChainLink.prototype.setMultiplier = function(multiplier) {
+      this.multiplier = multiplier;
+    };
+
+    MultiplierChainLink.prototype.getMultiplier = function(multiplier) {
+      return this.multiplier;
+    };
 
     MultiplierChainLink.fromRepresentation = function(rep) {
       var mchainlink = new MultiplierChainLink(rep.name, rep.multiplier);
@@ -494,6 +510,13 @@ var d20pal = (function() {
         return new Chainable('missing reference');
       } else {
         return this.addend;
+      }
+    };
+
+    AdderChainLink.prototype.getAddendName = function() {
+      if (typeof this.addend === 'string') { return this.addend; }
+      else if (this.addend instanceof Chainable) {
+        return this.addend.getName();
       }
     };
 

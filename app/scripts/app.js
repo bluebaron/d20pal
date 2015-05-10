@@ -19,15 +19,15 @@ angular
   ])
   .config(function ($routeProvider) {
     $routeProvider
-      .when('/', {
+      /**.when('/', {
         templateUrl: 'views/main.html',
         controller: 'MainCtrl'
-      })
+      })**/
       .when('/characters', {
         templateUrl: 'views/characters.html',
         controller: 'CharactersCtrl'
       })
-      .when('/characters/new', {
+      .when('/characters/new-character', {
         templateUrl: 'views/character-new.html',
         controller: 'NewCharacterCtrl'
       })
@@ -43,9 +43,17 @@ angular
         templateUrl: 'views/chainable.html',
         controller: 'ChainableCtrl'
       })
+      .when('/characters/:character/new-chainable', {
+        templateUrl: 'views/chainable-new.html',
+        controller: 'NewChainableCtrl'
+      })
       .when('/characters/:character/chainables/:chainable/links/:link', {
         templateUrl: 'views/chain-link-edit.html',
         controller: 'EditChainLinkCtrl',
+      })
+      .when('/characters/:character/chainables/:chainable/new-chain-link', {
+        templateUrl: 'views/chain-link-new.html',
+        controller: 'NewChainLinkCtrl'
       })
       .when('/about', {
         templateUrl: 'views/about.html',

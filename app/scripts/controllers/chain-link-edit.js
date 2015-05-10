@@ -2,30 +2,16 @@
 
 /* global d20pal: false */
 angular.module('d20palApp')
-  .controller('EditChainLinkCtrl', function($scope, $routeParams, charactersService) {
+  .controller('EditChainLinkCtrl', function($scope, $routeParams, charactersService, chainLinkService) {
     $scope.getChainLinkEditView = function() {
       var chainLink = $scope.chainTuple[0],
-          editorsBaseDir = 'views/chain-link-editors/',
-          knownLinkTypes = {
-            'static': {
-              'class': d20pal.util.StaticChainLink,
-              'viewUrl': editorsBaseDir + 'static.html'
-            },
-            'adder': {
-              'class': d20pal.util.AdderChainLink,
-              'viewUrl': editorsBaseDir + 'adder.html'
-            },
-            'multiplier': {
-              'class': d20pal.util.MultiplierChainLink,
-              'viewUrl': editorsBaseDir + 'multiplier.html'
-            }
-          };
+          linkTypes = chainLinkService.linkTypes;
       
-      for (var i = 0, typeNames = Object.keys(knownLinkTypes);
+      for (var i = 0, typeNames = Object.keys(linkTypes);
            i < typeNames.length;
            i++) {
-        if (chainLink instanceof knownLinkTypes[typeNames[i]]['class']) {
-          return knownLinkTypes[typeNames[i]].viewUrl;
+        if (chainLink instanceof linkTypes[typeNames[i]]['class']) {
+          return linkTypes[typeNames[i]].viewUrl;
         }
       }
 
