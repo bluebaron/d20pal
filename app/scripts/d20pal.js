@@ -273,6 +273,177 @@ var d20pal = (function() {
   // End of ChainLink class
 
   /**
+   * Creates a Chainable with the supplied name.
+   *
+   * @constructor
+   * @param {string} name - Name of the property that is chainable.
+   * @param {Chainable} [startsWith] - Another Chainable whose final value is
+   * found before beginning to evaluate the current one; the result is passed
+   * to the first ChainLink in the created Chainable instance each time its
+   * value is requested.
+   * 
+   * @classdesc Chainables are properties than can be calculated by taking
+   * some base value and passing it through multiple functions in a defined
+   * order determined by each link's priority.
+   * @memberof module:d20pal
+   */
+  function Chainable(name, initial) {
+    //console.log('Instantiating Chainable ' + name + '.');
+    this.setName('chainable');
+    this.setName(name);
+
+    this.setInitial(0);
+    this.setInitial(initial);
+
+    // [0] = ChainLink object
+    // [1] = Priority
+    // [2] = Partial evaluation of chain following this link
+    this.chainTuples = [];
+  }
+
+  exports.Chainable = Chainable;
+
+  Chainable.priorityRankIncrement = 100;
+
+  Chainable.prototype.setInitial = function(initial) {
+    if (initial !== undefined) { this.initial = initial; }
+  };
+
+  Chainable.prototype.getInitial = function() {
+    return this.initial;
+  };
+
+  Chainable.prototype.evalAt = function(idx, params) {
+    var curVal = this.getInitial();
+
+    if (this.chainTuples === []) { return curVal; }
+
+    for (var i = 0; i < idx && i < this.chainTuples.length; i++) {
+      curVal = this.chainTuples[i][0].evaluate(curVal, params);
+      this.chainTuples[i][2] = curVal;
+    }
+
+    return curVal;
+  };
+
+  Chainable.prototype.nextLowestPriorityRank = function() {
+    if (this.chainTuples.length === 0) {
+      return Chainable.priorityRankIncrement;
+    } else {
+      var lowest = this.chainTuples[this.chainTuples.length-1][1],
+          incr = Chainable.priorityRankIncrement,
+          nextLowestRank = lowest - (lowest % incr) + incr;
+
+      return nextLowestRank;
+    }
+  };
+
+  /**
+   * Adds a ChainLink to the Chainable.
+   *
+   * @param {ChainLink} newLink - Link to be added to the Chainable.
+   * @param {number} priority - Priority at which the link will be evaluated;
+   * lower priority links will be evaluated first.
+   * @return {ChainLink} The new link.
+   */
+  Chainable.prototype.addLink = function(newLink, priority) {
+    if (priority === undefined) {
+      priority = this.nextLowestPriorityRank();
+      this.chainTuples.push([newLink, priority, null]);
+    } else {
+      if (this.chainTuples.length === 0) {
+        this.chainTuples.push([newLink, priority, null]);
+      }
+
+      for (var i = 0; i < this.chainTuples.length + 1; i++) {
+        if (i === this.chainTuples.length) {
+          this.chainTuples.push([newLink, priority, null]);
+          break;
+        } else if (priority > this.chainTuples[i][1]) {
+          continue;
+        } else if (priority < this.chainTuples[i][1]) {
+          this.chainTuples.splice(i, 0, [newLink, priority, null]);
+          break;
+        } else {
+          var j = i;
+          while (this.chainTuples[j][1] === priority - 1) {
+            priority -= 1;
+            j -= 1;
+          }
+          break;
+        }
+      }
+    }
+
+    return newLink;
+  };
+
+  Chainable.prototype.swapPriorities = function(i, j) {
+    if (i < 0 || j < 0 || i >= this.chainTuples.length || j >= this.chainTuples.length) {
+      return false;
+    }
+    var temp = this.chainTuples[i];
+    this.chainTuples[i] = this.chainTuples[j];
+    this.chainTuples[j] = temp;
+  };
+  
+  Chainable.prototype.getLinkCount = function() {
+    return this.chainTuples.length;
+  };
+
+  /**
+   * Gets value of Chainable after the last link.
+   * 
+   * @param {object} params - Parameters used in evaluating the Chainable.
+   * @return {*} Result of evaluating every link in Chainable.
+   */
+  Chainable.prototype.getFinal = function(params) {
+    return this.evalAt(this.getLinkCount(), params);
+  };
+
+  Chainable.prototype.removeLink = function(idx) {
+    this.chainTuples.splice(idx, 1);
+  };
+
+  /**
+   * Gets an object representation of the Chainable for use in the
+   * serialization of a character.
+   *
+   * @returns {Object} Object representation of Chainable.
+   */
+  Chainable.prototype.getRepresentation = function() {
+    var chainTupleRepresentations = this.chainTuples.map(function(tuple) {
+      return [
+        tuple[0].serialize(),
+        tuple[1] // don't bother saving partials
+      ];
+    });
+
+    var obj = {
+      name: this.name,
+      chainTuples: chainTupleRepresentations
+    };
+
+    return obj;
+  };
+
+  Chainable.fromRepresentation = function(rep, character) {
+    var chain = new Chainable(rep.name);
+
+    rep.chainTuples.forEach(function(tuple) {
+      var chainLink = ChainLink.fromString(tuple[0], character);
+      chain.addLink(chainLink, tuple[1]);
+    });
+
+    return chain;
+  };
+
+  // Make Chainables Nameable
+  Chainable.prototype = extend(Chainable.prototype, Nameable);
+
+  // End of Chainable class
+
+  /**
    * Namespace for extra classes useful for most d20-based games
    * @namespace
    * @memberof module:d20pal
@@ -398,6 +569,36 @@ var d20pal = (function() {
       return Dice.roll(this.dicestr);
     };
 
+    function ReferenceChainable(name, chainableHolder, fallback) {
+      Chainable.call(this, name);
+      this.chainableHolder = chainableHolder;
+      this.reference = null;
+      this.fallback = fallback || 0;
+      this.resolveReference();
+    }
+
+    ReferenceChainable.prototype = Object.create(Chainable.prototype);
+    ReferenceChainable.prototype.constructor = ReferenceChainable;
+
+    ReferenceChainable.prototype.resolveReference = function() {
+      var res = this.chainableHolder.getChainableByName(this.getName());
+
+      if (res) {
+        this.reference = res;
+        return true;
+      } else {
+        return false;
+      }
+    };
+
+    ReferenceChainable.prototype.evalAt = function(idx, params) {
+      if (this.reference || this.resolveReference()) {
+        return this.reference.getFinal(params);
+      } else {
+        return this.fallback;
+      }
+    };
+
     /**
      * StaticChainLinks will output only one value, given at its creation.
      * @class
@@ -463,20 +664,20 @@ var d20pal = (function() {
     };
 
     function AdderChainLink(name, addend, character) {
-      this.setAddend(0);
-      this.setAddend(addend);
-      
       if (!name) {
         if (typeof addend === 'string') {
           name = addend;
         } else if (addend instanceof Chainable) {
-          name = addend.name;
+          name = addend.getName();
         }
       }
 
       this.setCharacter(new Character());
       this.setCharacter(character);
 
+      this.setAddend(0);
+      this.setAddend(addend);
+      
       var callback = function(oldVal) {
             var addend = this.getAddend();
             if (addend instanceof Chainable) {
@@ -494,8 +695,11 @@ var d20pal = (function() {
 
     AdderChainLink.prototype.setAddend = function(addend) {
       if (typeof addend === 'number' ||
-          typeof addend === 'string' ||
-          addend instanceof Chainable) { this.addend = addend; }
+          addend instanceof Chainable) {
+        this.addend = addend;
+      } else if (typeof addend === 'string') {
+        this.addend = new util.ReferenceChainable(addend, this.getCharacter());
+      }
     };
 
     AdderChainLink.prototype.getAddend = function() {
@@ -552,6 +756,7 @@ var d20pal = (function() {
     };
 
     return {
+      ReferenceChainable:   ReferenceChainable,
       StaticChainLink:      StaticChainLink,
       MultiplierChainLink:  MultiplierChainLink,
       AdderChainLink:       AdderChainLink,
@@ -562,167 +767,6 @@ var d20pal = (function() {
   exports.util = util;
 
   // End of util namespace
-
-  /**
-   * Creates a Chainable with the supplied name.
-   *
-   * @constructor
-   * @param {string} name - Name of the property that is chainable.
-   * @param {Chainable} [startsWith] - Another Chainable whose final value is
-   * found before beginning to evaluate the current one; the result is passed
-   * to the first ChainLink in the created Chainable instance each time its
-   * value is requested.
-   * 
-   * @classdesc Chainables are properties than can be calculated by taking
-   * some base value and passing it through multiple functions in a defined
-   * order determined by each link's priority.
-   * @memberof module:d20pal
-   */
-  function Chainable(name, initial) {
-    //console.log('Instantiating Chainable ' + name + '.');
-    this.setName('chainable');
-    this.setName(name);
-
-    this.setInitial(0);
-    this.setInitial(initial);
-
-    // [0] = ChainLink object
-    // [1] = Priority
-    // [2] = Partial evaluation of chain following this link
-    this.chainTuples = [];
-  }
-
-  exports.Chainable = Chainable;
-
-  Chainable.priorityRankIncrement = 100;
-
-  Chainable.prototype.setInitial = function(initial) {
-    if (initial !== undefined) { this.initial = initial; }
-  };
-
-  Chainable.prototype.getInitial = function() {
-    return this.initial;
-  };
-
-  Chainable.prototype.nextLowestPriorityRank = function() {
-    if (this.chainTuples.length === 0) {
-      return Chainable.priorityRankIncrement;
-    } else {
-      var lowest = this.chainTuples[this.chainTuples.length-1][1],
-          incr = Chainable.priorityRankIncrement,
-          nextLowestRank = lowest - (lowest % incr) + incr;
-
-      return nextLowestRank;
-    }
-  };
-
-  /**
-   * Adds a ChainLink to the Chainable.
-   *
-   * @param {ChainLink} newLink - Link to be added to the Chainable.
-   * @param {number} priority - Priority at which the link will be evaluated;
-   * lower priority links will be evaluated first.
-   * @return {ChainLink} The new link.
-   */
-  Chainable.prototype.addLink = function(newLink, priority) {
-    if (priority === undefined) {
-      priority = this.nextLowestPriorityRank();
-      this.chainTuples.push([newLink, priority, null]);
-    } else {
-      if (this.chainTuples.length === 0) {
-        this.chainTuples.push([newLink, priority, null]);
-      }
-
-      for (var i = 0; i < this.chainTuples.length + 1; i++) {
-        if (i === this.chainTuples.length) {
-          this.chainTuples.push([newLink, priority, null]);
-          break;
-        } else if (priority > this.chainTuples[i][1]) {
-          continue;
-        } else if (priority < this.chainTuples[i][1]) {
-          this.chainTuples.splice(i, 0, [newLink, priority, null]);
-          break;
-        } else {
-          var j = i;
-          while (this.chainTuples[j][1] === priority - 1) {
-            priority -= 1;
-            j -= 1;
-          }
-          break;
-        }
-      }
-    }
-
-    return newLink;
-  };
-
-  Chainable.prototype.swapPriorities = function(i, j) {
-    if (i < 0 || j < 0 || i >= this.chainTuples.length || j >= this.chainTuples.length) {
-      return false;
-    }
-    var temp = this.chainTuples[i];
-    this.chainTuples[i] = this.chainTuples[j];
-    this.chainTuples[j] = temp;
-  };
-
-  /**
-   * Gets value of Chainable after the last link.
-   * 
-   * @param {object} params - Parameters used in evaluating the Chainable.
-   * @return {*} Result of evaluating every link in Chainable.
-   */
-  Chainable.prototype.getFinal = function(params) {
-    var curVal = this.initial;
-
-    this.chainTuples.forEach(function(tuple) {
-      curVal = tuple[0].evaluate(curVal, params);
-      tuple[2] = curVal;
-    }, this);
-
-    return curVal;
-  };
-
-  Chainable.prototype.removeLink = function(idx) {
-    this.chainTuples.splice(idx, 1);
-  };
-
-  /**
-   * Gets an object representation of the Chainable for use in the
-   * serialization of a character.
-   *
-   * @returns {Object} Object representation of Chainable.
-   */
-  Chainable.prototype.getRepresentation = function() {
-    var chainTupleRepresentations = this.chainTuples.map(function(tuple) {
-      return [
-        tuple[0].serialize(),
-        tuple[1] // don't bother saving partials
-      ];
-    });
-
-    var obj = {
-      name: this.name,
-      chainTuples: chainTupleRepresentations
-    };
-
-    return obj;
-  };
-
-  Chainable.fromRepresentation = function(rep, character) {
-    var chain = new Chainable(rep.name);
-
-    rep.chainTuples.forEach(function(tuple) {
-      var chainLink = ChainLink.fromString(tuple[0], character);
-      chain.addLink(chainLink, tuple[1]);
-    });
-
-    return chain;
-  };
-
-  // Make Chainables Nameable
-  Chainable.prototype = extend(Chainable.prototype, Nameable);
-
-  // End of Chainable class
 
   /**
    * Creates a character.
