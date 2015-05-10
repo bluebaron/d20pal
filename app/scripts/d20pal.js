@@ -737,11 +737,11 @@ var d20pal = (function() {
           addend = this.getAddend();
 
       if (addend instanceof Chainable) {
-        rep.addend = addend.name;
+        rep.addend = addend.getName();
 
         // Remove redundant name in rep (and thus JSON) as, by default, a
         // dynamic AdderChainLink's name is the name of its addend.
-        if (rep.name === addend.name) {
+        if (rep.name === rep.addend) {
           delete rep.name;
         }
       } else {
