@@ -1,3 +1,17 @@
+/* Coolors Exported Palette - coolors.co/ffd6bf-75503a-281b14-c90000-ff7b00 */
+
+$color1: #ffd6bf;
+$color2: #75503a;
+$color3: #281b14;
+$color4: #c90000;
+$color5: #ff7b00;
+
+$bg-light: $color1;
+$bg-med: $color2;
+$bg-dark: $color3;
+$primary: $color4;
+$secondary: $color5;
+
 $icon-font-path: "../bower_components/bootstrap-sass-official/assets/fonts/bootstrap/";
 // bower:scss
 @import "bootstrap-sass-official/assets/stylesheets/_bootstrap.scss";
@@ -10,6 +24,7 @@ body {
 /* Custom page header */
 .header {
   /* Make the masthead heading the same height as the navigation */
+
   h3 {
     margin-top: 0;
     margin-bottom: 0;
@@ -20,10 +35,9 @@ body {
 
 /* Custom page footer */
 .footer {
+  border-top: 1px solid $gray-lighter;
   margin-top: 10px;
   padding-top: 10px;
-  color: #777;
-  border-top: 1px solid #e5e5e5;
 }
 
 /* Responsive: Portrait tablets and up */

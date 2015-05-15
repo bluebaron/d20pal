@@ -7,5 +7,6 @@ angular.module('d20palApp')
 
     charactersService.getCharacters().then(function(newCharacters) {
       $scope.characters = newCharacters;
+      window.characters = newCharacters;
     });
   });

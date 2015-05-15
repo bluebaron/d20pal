@@ -178,8 +178,8 @@ var d20pal = (function() {
    */
   ChainLink.prototype.serialize = function() {
     this.tag(); // initializes tags in case they weren't already
-    var propStr = null,
-        name = this.name;
+    var propStr = '',
+        name = this.getName();
     if (this.tags.length > 0) {
       propStr = ['tags', this.tags.join(',')].join('=');
     }
@@ -193,11 +193,11 @@ var d20pal = (function() {
           } else {
             propVal = this[propName].toString();
           }
-          propStr += ';' + [propName, propVal].join('=');
+          propStr += [propName, propVal].join('=') + ';';
         }, this);
 
-        if (this.name !== key) {
-          propStr += ';name=' + this.name;
+        if (this.getName() !== key) {
+          propStr += 'name=' + this.name;
         }
 
         name = key;
@@ -221,7 +221,6 @@ var d20pal = (function() {
   };
 
   ChainLink.fromString = function(rep, character) {
-    // res is all registered types whose names were found in rep's tags
     var chainlink = null,
         type = ChainLink.types[rep.split(':')[0]];
 

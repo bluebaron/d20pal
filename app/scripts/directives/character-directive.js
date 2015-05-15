@@ -2,10 +2,10 @@
 
 angular.module('d20palApp')
   .directive('dtpCharacter', function(charactersService) {
-    var characterTemplatesDir = 'scripts/directives/views/';
+    var characterTemplatesDir = 'views/';
 
     function getCharacterTemplate(elem, attr) {
-      return characterTemplatesDir + 'default.html';
+      return characterTemplatesDir + 'character-' + 'default.html';
     }
 
     return {

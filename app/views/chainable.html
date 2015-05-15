@@ -2,7 +2,7 @@
   <div class="col-xs-4">
     <ul>
       <li ng-repeat="chainTuple in chainable.chainTuples">
-        <a class="chain-link-name" ng-href="#/characters/{{character.getName()}}/chainables/{{chainable.getName()}}/links/{{$index}}"> {{chainTuple[0].getName()}}</a>: {{chainTuple[2]}}
+        <dtp-chain-link chain-link="chainTuple[0]"></dtp-chain-link>
       </li>
       <li>
         <a href="#/characters/{{character.getName()}}/chainables/{{chainable.getName()}}/new-chain-link">add new chain link...</a>
